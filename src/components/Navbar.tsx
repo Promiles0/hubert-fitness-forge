@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Menu, X, Dumbbell } from 'lucide-react';
+import { Menu, X, Dumbbell, LogIn, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +40,20 @@ const Navbar = () => {
             <Link to="/membership" className="text-white hover:text-fitness-red transition-colors">Membership</Link>
             <Link to="/trainers" className="text-white hover:text-fitness-red transition-colors">Trainers</Link>
             <Link to="/contact" className="text-white hover:text-fitness-red transition-colors">Contact</Link>
-            <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold" size="sm">Join Now</Button>
+            <div className="flex items-center space-x-4">
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="border-white text-white hover:bg-fitness-red hover:text-white hover:border-fitness-red">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold" size="sm">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Join Now
+                </Button>
+              </Link>
+            </div>
           </nav>
 
           {/* Mobile Navigation Toggle */}
@@ -65,7 +78,20 @@ const Navbar = () => {
             <Link to="/membership" className="text-white hover:text-fitness-red transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Membership</Link>
             <Link to="/trainers" className="text-white hover:text-fitness-red transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Trainers</Link>
             <Link to="/contact" className="text-white hover:text-fitness-red transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-            <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold w-full" size="sm">Join Now</Button>
+            <div className="flex flex-col space-y-3 pt-2">
+              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="outline" className="w-full border-white text-white hover:bg-fitness-red hover:text-white hover:border-fitness-red">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              </Link>
+              <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
+                <Button className="w-full bg-fitness-red hover:bg-red-700 text-white font-bold">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Join Now
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       )}
