@@ -1,6 +1,7 @@
 
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CSSProperties } from 'react';
 
 interface TrainerCardProps {
   name: string;
@@ -13,6 +14,7 @@ interface TrainerCardProps {
     linkedin?: string;
   };
   className?: string;
+  style?: CSSProperties;
 }
 
 const TrainerCard = ({ 
@@ -21,13 +23,17 @@ const TrainerCard = ({
   image, 
   bio, 
   socialMedia = {},
-  className 
+  className,
+  style 
 }: TrainerCardProps) => {
   return (
-    <div className={cn(
-      "bg-fitness-darkGray rounded-lg overflow-hidden group",
-      className
-    )}>
+    <div 
+      className={cn(
+        "bg-fitness-darkGray rounded-lg overflow-hidden group",
+        className
+      )}
+      style={style}
+    >
       <div className="h-72 relative overflow-hidden">
         <img 
           src={image} 

@@ -1,5 +1,6 @@
 
 import { cn } from '@/lib/utils';
+import { CSSProperties } from 'react';
 
 interface TestimonialCardProps {
   quote: string;
@@ -7,6 +8,7 @@ interface TestimonialCardProps {
   role?: string;
   image?: string;
   className?: string;
+  style?: CSSProperties;
 }
 
 const TestimonialCard = ({
@@ -14,13 +16,17 @@ const TestimonialCard = ({
   name,
   role,
   image,
-  className
+  className,
+  style
 }: TestimonialCardProps) => {
   return (
-    <div className={cn(
-      "bg-fitness-darkGray rounded-lg p-6 md:p-8",
-      className
-    )}>
+    <div 
+      className={cn(
+        "bg-fitness-darkGray rounded-lg p-6 md:p-8",
+        className
+      )}
+      style={style}
+    >
       <div className="flex flex-col h-full">
         <div className="mb-6">
           <svg className="w-10 h-10 text-fitness-red mb-4" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">

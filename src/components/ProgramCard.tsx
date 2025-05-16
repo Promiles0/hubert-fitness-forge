@@ -1,6 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CSSProperties } from 'react';
 
 interface ProgramCardProps {
   title: string;
@@ -8,14 +9,18 @@ interface ProgramCardProps {
   image: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
   className?: string;
+  style?: CSSProperties;
 }
 
-const ProgramCard = ({ title, description, image, level, className }: ProgramCardProps) => {
+const ProgramCard = ({ title, description, image, level, className, style }: ProgramCardProps) => {
   return (
-    <div className={cn(
-      "bg-fitness-darkGray rounded-lg overflow-hidden group hover:translate-y-[-5px] transition-all duration-300", 
-      className
-    )}>
+    <div 
+      className={cn(
+        "bg-fitness-darkGray rounded-lg overflow-hidden group hover:translate-y-[-5px] transition-all duration-300", 
+        className
+      )}
+      style={style}
+    >
       <div className="h-60 relative overflow-hidden">
         <img 
           src={image} 

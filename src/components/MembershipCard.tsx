@@ -2,6 +2,7 @@
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CSSProperties } from 'react';
 
 interface MembershipCardProps {
   title: string;
@@ -10,6 +11,7 @@ interface MembershipCardProps {
   features: string[];
   popular?: boolean;
   className?: string;
+  style?: CSSProperties;
 }
 
 const MembershipCard = ({ 
@@ -18,14 +20,18 @@ const MembershipCard = ({
   period, 
   features, 
   popular = false,
-  className 
+  className,
+  style 
 }: MembershipCardProps) => {
   return (
-    <div className={cn(
-      "relative bg-fitness-darkGray rounded-lg p-8 transition-all duration-300 hover:translate-y-[-5px]",
-      popular && "border-2 border-fitness-red shadow-lg shadow-fitness-red/10",
-      className
-    )}>
+    <div 
+      className={cn(
+        "relative bg-fitness-darkGray rounded-lg p-8 transition-all duration-300 hover:translate-y-[-5px]",
+        popular && "border-2 border-fitness-red shadow-lg shadow-fitness-red/10",
+        className
+      )}
+      style={style}
+    >
       {popular && (
         <div className="absolute top-0 right-0 bg-fitness-red text-white px-4 py-1 rounded-bl-lg font-medium text-sm">
           Most Popular
