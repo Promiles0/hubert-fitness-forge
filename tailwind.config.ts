@@ -64,7 +64,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				fitness: {
-					red: '#ea384c',
+					red: '#dc2626',
 					black: '#000000',
 					darkGray: '#222222',
 					lightGray: '#555555',

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Dumbbell, User, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -19,8 +19,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -31,49 +30,23 @@ const LoginPage = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
-    
-    try {
-      // This is a mock login - in a real app, you would connect to Supabase or another auth provider
-      console.log("Login attempt with:", data);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful login
-      toast({
-        title: "Login successful",
-        description: "Welcome back to HUBERT FITNESS!",
-      });
-      
-      // Redirect to dashboard
-      navigate("/dashboard");
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
-      console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await login(data.email, data.password);
   };
 
   return (
     <div className="min-h-screen bg-fitness-black flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-fade-in">
           <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
+            <Dumbbell className="h-10 w-10 text-[#dc2626]" />
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
+              <span className="text-[#dc2626]">HUBERT</span> FITNESS
             </h1>
           </Link>
           <p className="text-gray-400 mt-2">Sign in to access your fitness journey</p>
         </div>
         
-        <Card className="bg-fitness-darkGray border-gray-700">
+        <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
           <CardHeader>
             <CardTitle className="text-xl text-white">Login</CardTitle>
             <CardDescription className="text-gray-400">
@@ -128,7 +101,7 @@ const LoginPage = () => {
                 />
                 <Button 
                   type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700"
+                  className="w-full bg-[#dc2626] hover:bg-red-700 transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? "Signing in..." : "Sign In"}
@@ -139,13 +112,13 @@ const LoginPage = () => {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-0">
             <div className="text-sm text-gray-400 text-center">
-              <Link to="/forgot-password" className="text-fitness-red hover:underline">
+              <Link to="/forgot-password" className="text-[#dc2626] hover:underline transition-colors">
                 Forgot your password?
               </Link>
             </div>
             <div className="text-sm text-gray-400 flex justify-center">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-fitness-red hover:underline ml-1">
+              <Link to="/signup" className="text-[#dc2626] hover:underline ml-1 transition-colors">
                 Sign up
               </Link>
             </div>

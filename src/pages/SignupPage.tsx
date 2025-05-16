@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Dumbbell, User, Lock, Mail, ArrowRight, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -24,8 +24,7 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const SignupPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { signup, isLoading } = useAuth();
   
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -38,49 +37,23 @@ const SignupPage = () => {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
-    setIsLoading(true);
-    
-    try {
-      // This is a mock signup - in a real app, you would connect to Supabase or another auth provider
-      console.log("Signup attempt with:", data);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful signup
-      toast({
-        title: "Account created",
-        description: "Welcome to HUBERT FITNESS! Your account has been created successfully.",
-      });
-      
-      // Redirect to dashboard
-      navigate("/dashboard");
-    } catch (error) {
-      toast({
-        title: "Signup failed",
-        description: "There was an issue creating your account. Please try again.",
-        variant: "destructive",
-      });
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await signup(data.name, data.email, data.password);
   };
 
   return (
     <div className="min-h-screen bg-fitness-black flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-fade-in">
           <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
+            <Dumbbell className="h-10 w-10 text-[#dc2626]" />
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
+              <span className="text-[#dc2626]">HUBERT</span> FITNESS
             </h1>
           </Link>
           <p className="text-gray-400 mt-2">Create your account to start your fitness journey</p>
         </div>
         
-        <Card className="bg-fitness-darkGray border-gray-700">
+        <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
           <CardHeader>
             <CardTitle className="text-xl text-white">Sign Up</CardTitle>
             <CardDescription className="text-gray-400">
@@ -167,17 +140,17 @@ const SignupPage = () => {
                           checked={field.value}
                           onCheckedChange={field.onChange}
                           disabled={isLoading}
-                          className="data-[state=checked]:bg-fitness-red data-[state=checked]:border-fitness-red"
+                          className="data-[state=checked]:bg-[#dc2626] data-[state=checked]:border-[#dc2626]"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm text-gray-300">
                           I agree to the{" "}
-                          <Link to="/terms" className="text-fitness-red hover:underline">
+                          <Link to="/terms" className="text-[#dc2626] hover:underline transition-colors">
                             Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link to="/privacy" className="text-fitness-red hover:underline">
+                          <Link to="/privacy" className="text-[#dc2626] hover:underline transition-colors">
                             Privacy Policy
                           </Link>
                         </FormLabel>
@@ -189,7 +162,7 @@ const SignupPage = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700"
+                  className="w-full bg-[#dc2626] hover:bg-red-700 transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating Account..." : "Create Account"}
@@ -201,27 +174,27 @@ const SignupPage = () => {
           <CardFooter className="flex justify-center pt-0">
             <div className="text-sm text-gray-400">
               Already have an account?{" "}
-              <Link to="/login" className="text-fitness-red hover:underline">
+              <Link to="/login" className="text-[#dc2626] hover:underline transition-colors">
                 Sign in
               </Link>
             </div>
           </CardFooter>
         </Card>
         
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
           <div className="flex flex-col space-y-2 items-center">
             <h3 className="text-white font-medium">Why join HUBERT FITNESS?</h3>
             <div className="flex flex-col space-y-2 mt-2 text-sm">
               <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-fitness-red mr-2" />
+                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
                 <span>Personalized workout plans</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-fitness-red mr-2" />
+                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
                 <span>Expert trainer guidance</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-fitness-red mr-2" />
+                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
                 <span>Track your fitness progress</span>
               </div>
             </div>

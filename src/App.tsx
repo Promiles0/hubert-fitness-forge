@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -22,49 +23,51 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public routes with Navbar and Footer */}
-          <Route
-            path="/"
-            element={
-              <>
-                <Navbar />
-                <HomePage />
-                <Footer />
-              </>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <>
-                <Navbar />
-                <AboutPage />
-                <Footer />
-              </>
-            }
-          />
-          <Route
-            path="/contact"
-            element={
-              <>
-                <Navbar />
-                <ContactPage />
-                <Footer />
-              </>
-            }
-          />
-          
-          {/* Auth routes without Navbar and Footer */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          
-          {/* Dashboard routes - the dashboard has its own layout */}
-          <Route path="/dashboard/*" element={<DashboardPage />} />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes with Navbar and Footer */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <Navbar />
+                  <HomePage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <>
+                  <Navbar />
+                  <AboutPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <>
+                  <Navbar />
+                  <ContactPage />
+                  <Footer />
+                </>
+              }
+            />
+            
+            {/* Auth routes without Navbar and Footer */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            
+            {/* Dashboard routes - the dashboard has its own layout */}
+            <Route path="/dashboard/*" element={<DashboardPage />} />
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
