@@ -20,16 +20,17 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notifications, setNotifications] = useState(3);
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   
-  // Set a default username if user doesn't have one
-  const username = user?.name || "Member";
-  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`;
+  // Prefer username over name
+  const displayUsername = user?.username || (user?.email ? user.email.split('@')[0] : 'Member');
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${displayUsername}`;
 
   const handleLogout = () => {
     logout();
@@ -39,6 +40,14 @@ const DashboardPage = () => {
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-fitness-black flex items-center justify-center">
+        <LoadingSpinner size={48} className="text-[#dc2626]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-fitness-black flex flex-col">
@@ -51,14 +60,14 @@ const DashboardPage = () => {
         <aside className="bg-fitness-darkGray w-full md:w-64 border-r border-gray-800">
           <nav className="p-4 space-y-1">
             <div className="flex items-center gap-3 px-4 py-3 mb-2">
-              <Avatar className="h-10 w-10 border border-fitness-red">
-                <AvatarImage src={userAvatar} alt={username} />
-                <AvatarFallback className="bg-fitness-red text-white">
-                  {username.charAt(0)}
+              <Avatar className="h-10 w-10 border border-[#dc2626]">
+                <AvatarImage src={userAvatar} alt={displayUsername} />
+                <AvatarFallback className="bg-[#dc2626] text-white">
+                  {displayUsername.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-white font-medium">{username}</p>
+                <p className="text-white font-medium">{displayUsername}</p>
                 <p className="text-xs text-gray-400">Member</p>
               </div>
             </div>
@@ -68,7 +77,7 @@ const DashboardPage = () => {
             <Link to="/dashboard" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard") && location.pathname === "/dashboard"
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <Home className="h-5 w-5" />
@@ -78,7 +87,7 @@ const DashboardPage = () => {
             <Link to="/dashboard/classes" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard/classes") 
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <Calendar className="h-5 w-5" />
@@ -102,7 +111,7 @@ const DashboardPage = () => {
             <Link to="/dashboard/progress" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard/progress") 
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <BarChart2 className="h-5 w-5" />
@@ -112,7 +121,7 @@ const DashboardPage = () => {
             <Link to="/dashboard/nutrition" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard/nutrition") 
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <Apple className="h-5 w-5" />
@@ -122,7 +131,7 @@ const DashboardPage = () => {
             <Link to="/dashboard/chat" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard/chat") 
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <MessageSquare className="h-5 w-5" />
@@ -132,7 +141,7 @@ const DashboardPage = () => {
             <Link to="/dashboard/settings" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
                 isActive("/dashboard/settings") 
-                  ? "bg-fitness-red text-white" 
+                  ? "bg-[#dc2626] text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
               <Settings className="h-5 w-5" />
@@ -160,14 +169,14 @@ const DashboardPage = () => {
             <div className="space-y-6">
               <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Welcome, {username}! 👋
+                  Welcome, {displayUsername}! 👋
                 </h2>
                 <div className="mt-4 bg-fitness-black p-4 rounded-md border border-gray-800">
                   <p className="text-gray-300 text-sm">Your Next Class:</p>
                   <div className="flex items-center mt-1">
                     <span className="text-white font-semibold">HIIT</span>
                     <span className="mx-2 text-gray-500">@</span>
-                    <span className="text-fitness-red font-semibold">6:30 PM</span>
+                    <span className="text-[#dc2626] font-semibold">6:30 PM</span>
                     <span className="ml-2 text-gray-300">
                       with Michael
                     </span>
@@ -204,13 +213,13 @@ const DashboardPage = () => {
                     <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-white font-medium">Weight Loss</p>
-                        <p className="text-fitness-red font-semibold">
+                        <p className="text-[#dc2626] font-semibold">
                           7.5/10 kg
                         </p>
                       </div>
                       <div className="w-full bg-gray-800 rounded-full h-2.5">
                         <div 
-                          className="bg-fitness-red h-2.5 rounded-full" 
+                          className="bg-[#dc2626] h-2.5 rounded-full" 
                           style={{ width: `75%` }}
                         ></div>
                       </div>
@@ -222,13 +231,13 @@ const DashboardPage = () => {
                     <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-white font-medium">Attendance</p>
-                        <p className="text-fitness-red font-semibold">
+                        <p className="text-[#dc2626] font-semibold">
                           3/4 sessions
                         </p>
                       </div>
                       <div className="w-full bg-gray-800 rounded-full h-2.5">
                         <div 
-                          className="bg-fitness-red h-2.5 rounded-full" 
+                          className="bg-[#dc2626] h-2.5 rounded-full" 
                           style={{ width: `75%` }}
                         ></div>
                       </div>
@@ -238,7 +247,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
                   
-                  <Button className="w-full mt-4 bg-fitness-red hover:bg-red-700">
+                  <Button className="w-full mt-4 bg-[#dc2626] hover:bg-red-700">
                     Add New Goal
                   </Button>
                 </div>
@@ -259,7 +268,7 @@ const DashboardPage = () => {
                       <p className="text-gray-400 text-sm">Wed, 5:30 PM</p>
                     </li>
                   </ul>
-                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                  <Button variant="outline" className="w-full mt-4 border-[#dc2626] text-[#dc2626] hover:bg-[#dc2626] hover:text-white">
                     View All Classes
                   </Button>
                 </div>
@@ -274,7 +283,7 @@ const DashboardPage = () => {
                       Aim for 1.6-2.0g of protein per kg of bodyweight for optimal muscle recovery.
                     </p>
                   </div>
-                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                  <Button variant="outline" className="w-full mt-4 border-[#dc2626] text-[#dc2626] hover:bg-[#dc2626] hover:text-white">
                     View Nutrition Plan
                   </Button>
                 </div>
@@ -285,7 +294,7 @@ const DashboardPage = () => {
                   </h3>
                   <div className="flex items-center mt-4 bg-fitness-black p-4 rounded-md border border-gray-800">
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-fitness-red text-white">
+                      <AvatarFallback className="bg-[#dc2626] text-white">
                         MT
                       </AvatarFallback>
                     </Avatar>
@@ -294,7 +303,7 @@ const DashboardPage = () => {
                       <p className="text-gray-400 text-sm">Strength Specialist</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                  <Button variant="outline" className="w-full mt-4 border-[#dc2626] text-[#dc2626] hover:bg-[#dc2626] hover:text-white">
                     Message Trainer
                   </Button>
                 </div>

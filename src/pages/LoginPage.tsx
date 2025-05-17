@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, User, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { Dumbbell, User, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -38,9 +39,9 @@ const LoginPage = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in">
           <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
+            <Dumbbell className="h-10 w-10 text-[#dc2626]" />
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
+              <span className="text-[#dc2626]">HUBERT</span> FITNESS
             </h1>
           </Link>
           <p className="text-gray-400 mt-2">Sign in to access your fitness journey</p>
@@ -101,12 +102,12 @@ const LoginPage = () => {
                 />
                 <Button 
                   type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
+                  className="w-full bg-[#dc2626] hover:bg-red-700 transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <LoadingSpinner size={16} className="mr-2" />
                       Signing in...
                     </>
                   ) : (
@@ -121,13 +122,13 @@ const LoginPage = () => {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-0">
             <div className="text-sm text-gray-400 text-center">
-              <Link to="/forgot-password" className="text-fitness-red hover:underline transition-colors">
+              <Link to="/forgot-password" className="text-[#dc2626] hover:underline transition-colors">
                 Forgot your password?
               </Link>
             </div>
             <div className="text-sm text-gray-400 flex justify-center">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-fitness-red hover:underline ml-1 transition-colors">
+              <Link to="/signup" className="text-[#dc2626] hover:underline ml-1 transition-colors">
                 Sign up
               </Link>
             </div>

@@ -18,8 +18,24 @@ import TrainersPage from "./pages/TrainersPage";
 import MembershipPage from "./pages/MembershipPage";
 import SchedulePage from "./pages/SchedulePage";
 import { AuthProvider } from "./contexts/AuthContext";
+import { Fragment } from "react";
 
 const queryClient = new QueryClient();
+
+// Create layout components for consistent navigation
+const PublicLayout = ({ children }: { children: React.ReactNode }) => (
+  <Fragment>
+    <Navbar />
+    {children}
+    <Footer />
+  </Fragment>
+);
+
+const AuthLayout = ({ children }: { children: React.ReactNode }) => (
+  <Fragment>
+    {children}
+  </Fragment>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -29,41 +45,24 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Public routes with Navbar and Footer */}
-            <Route
-              path="/"
-              element={<HomePage />}
-            />
-            <Route
-              path="/about"
-              element={<AboutPage />}
-            />
-            <Route
-              path="/contact"
-              element={<ContactPage />}
-            />
-            <Route
-              path="/programs"
-              element={<ProgramsPage />}
-            />
-            <Route
-              path="/trainers"
-              element={<TrainersPage />}
-            />
-            <Route
-              path="/membership"
-              element={<MembershipPage />}
-            />
-            <Route
-              path="/schedule"
-              element={<SchedulePage />}
-            />
+            {/* Public routes with layout */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/programs" element={<ProgramsPage />} />
+              <Route path="/trainers" element={<TrainersPage />} />
+              <Route path="/membership" element={<MembershipPage />} />
+              <Route path="/schedule" element={<SchedulePage />} />
+            </Route>
             
             {/* Auth routes without Navbar and Footer */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+            </Route>
             
-            {/* Dashboard routes */}
+            {/* Dashboard already has its own layout */}
             <Route path="/dashboard/*" element={<DashboardPage />} />
             
             {/* Catch-all route */}

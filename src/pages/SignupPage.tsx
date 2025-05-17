@@ -10,7 +10,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -44,9 +44,9 @@ const SignupPage = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in">
           <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
+            <Dumbbell className="h-10 w-10 text-[#dc2626]" />
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
+              <span className="text-[#dc2626]">HUBERT</span> FITNESS
             </h1>
           </Link>
           <p className="text-gray-400 mt-2">Create an account to start your fitness journey</p>
@@ -153,12 +153,12 @@ const SignupPage = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
+                  className="w-full bg-[#dc2626] hover:bg-red-700 transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <LoadingSpinner size={16} className="mr-2" />
                       Creating account...
                     </>
                   ) : (
@@ -174,7 +174,7 @@ const SignupPage = () => {
           <CardFooter className="flex flex-col space-y-4 pt-0">
             <div className="text-sm text-gray-400 flex justify-center">
               Already have an account?{" "}
-              <Link to="/login" className="text-fitness-red hover:underline ml-1 transition-colors">
+              <Link to="/login" className="text-[#dc2626] hover:underline ml-1 transition-colors">
                 Log in
               </Link>
             </div>
