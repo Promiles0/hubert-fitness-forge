@@ -204,7 +204,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Day Pass"
-                price="$10"
+                price="$--"
                 period="day"
                 description="Perfect for visitors or those wanting to try our facilities before committing."
                 features={[
@@ -220,7 +220,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Monthly"
-                price="$49"
+                price="$--"
                 period="month"
                 description="Our most popular plan for regular gym-goers who want comprehensive access."
                 features={[
@@ -238,7 +238,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Annual"
-                price="$499"
+                price="$--"
                 period="year"
                 description="Our best value plan with two months free and additional premium perks."
                 features={[
@@ -273,9 +273,9 @@ const MembershipPage = () => {
               {/* Price row */}
               <div className="grid grid-cols-5 py-5 border-b border-gray-800 bg-fitness-black/50">
                 <div className="col-span-2 text-white font-medium px-6">Price</div>
-                <div className="text-center text-white">$10/day</div>
-                <div className="text-center text-white">$49/month</div>
-                <div className="text-center text-white">$499/year</div>
+                <div className="text-center text-white">$--/day</div>
+                <div className="text-center text-white">$--/month</div>
+                <div className="text-center text-white">$--/year</div>
               </div>
               
               {/* Content */}
@@ -403,15 +403,15 @@ const MembershipPage = () => {
               <ul className="space-y-4 mb-8">
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Single Session</span>
-                  <span className="text-fitness-red font-semibold">$65</span>
+                  <span className="text-fitness-red font-semibold">$--</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">5 Session Pack</span>
-                  <span className="text-fitness-red font-semibold">$300</span>
+                  <span className="text-fitness-red font-semibold">$--</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">10 Session Pack</span>
-                  <span className="text-fitness-red font-semibold">$550</span>
+                  <span className="text-fitness-red font-semibold">$--</span>
                 </li>
               </ul>
               
@@ -427,15 +427,15 @@ const MembershipPage = () => {
               <ul className="space-y-4 mb-8">
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Initial Consultation</span>
-                  <span className="text-fitness-red font-semibold">$75</span>
+                  <span className="text-fitness-red font-semibold">$--</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Personalized Meal Plan</span>
-                  <span className="text-fitness-red font-semibold">$120</span>
+                  <span className="text-fitness-red font-semibold">$--</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Monthly Coaching</span>
-                  <span className="text-fitness-red font-semibold">$99/mo</span>
+                  <span className="text-fitness-red font-semibold">$--/mo</span>
                 </li>
               </ul>
               
@@ -451,15 +451,15 @@ const MembershipPage = () => {
               <ul className="space-y-4 mb-8">
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Private Locker Rental</span>
-                  <span className="text-fitness-red font-semibold">$15/mo</span>
+                  <span className="text-fitness-red font-semibold">$--/mo</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Towel Service</span>
-                  <span className="text-fitness-red font-semibold">$10/mo</span>
+                  <span className="text-fitness-red font-semibold">$--/mo</span>
                 </li>
                 <li className="flex justify-between items-center border-b border-gray-800 pb-3">
                   <span className="text-white">Recovery Zone Access</span>
-                  <span className="text-fitness-red font-semibold">$25/mo</span>
+                  <span className="text-fitness-red font-semibold">$--/mo</span>
                 </li>
               </ul>
               
@@ -524,7 +524,7 @@ const MembershipPage = () => {
                   Do you offer student or military discounts?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4 text-gray-300">
-                  Yes, we offer a special student rate of $35/month with valid student ID. Active military and veterans receive a 15% discount on any membership plan. These discounts cannot be combined with other promotions.
+                  Yes, we offer a special student rate of $--/month with valid student ID. Active military and veterans receive a 15% discount on any membership plan. These discounts cannot be combined with other promotions.
                 </AccordionContent>
               </AccordionItem>
               

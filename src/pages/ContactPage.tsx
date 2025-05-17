@@ -76,8 +76,8 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-2">Our Location</h3>
-                    <p className="text-gray-400">123 Fitness Avenue</p>
-                    <p className="text-gray-400">Gym City, GC 12345</p>
+                    <p className="text-gray-400">Juru Park</p>
+                    {/* <p className="text-gray-400">Gym City, GC 12345</p> */}
                   </div>
                 </div>
                 
@@ -88,7 +88,7 @@ const ContactPage = () => {
                   <div>
                     <h3 className="text-lg font-bold mb-2">Email Us</h3>
                     <p className="text-gray-400">info@hubertfitness.com</p>
-                    <p className="text-gray-400">support@hubertfitness.com</p>
+                    {/* <p className="text-gray-400">support@hubertfitness.com</p> */}
                   </div>
                 </div>
                 
@@ -98,8 +98,8 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-2">Call Us</h3>
-                    <p className="text-gray-400">Main: (555) 123-4567</p>
-                    <p className="text-gray-400">Support: (555) 987-6543</p>
+                    <p className="text-gray-400">Main: +250 780 899 767</p>
+                    {/* <p className="text-gray-400">Support: (555) 987-6543</p> */}
                   </div>
                 </div>
                 
@@ -109,9 +109,9 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-2">Working Hours</h3>
-                    <p className="text-gray-400">Monday - Friday: 5:00 AM - 10:00 PM</p>
-                    <p className="text-gray-400">Saturday: 6:00 AM - 8:00 PM</p>
-                    <p className="text-gray-400">Sunday: 6:00 AM - 6:00 PM</p>
+                    <p className="text-gray-400">Monday - Thursday: 7:00 AM - 18:00 PM</p>
+                    {/* <p className="text-gray-400">Saturday: 6:00 AM - 8:00 PM</p> */}
+                    {/* <p className="text-gray-400">Sunday: 6:00 AM - 6:00 PM</p> */}
                   </div>
                 </div>
               </div>
@@ -159,7 +159,7 @@ const ContactPage = () => {
                       value={formData.phone}
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-fitness-red"
-                      placeholder="(555) 123-4567"
+                      placeholder="+(250) 78- --- ---"
                     />
                   </div>
                   
