@@ -2,13 +2,17 @@
 import { useEffect } from 'react';
 import { ArrowRight, Dumbbell, Users, Award, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import SectionTitle from '@/components/SectionTitle';
 import ProgramCard from '@/components/ProgramCard';
 import MembershipCard from '@/components/MembershipCard';
 import TrainerCard from '@/components/TrainerCard';
 import TestimonialCard from '@/components/TestimonialCard';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomePage = () => {
+  const { isAuthenticated } = useAuth();
+  
   // Animation on scroll effect
   useEffect(() => {
     const handleScroll = () => {
@@ -56,12 +60,26 @@ const HomePage = () => {
               Transform your body, elevate your mindset, and join our community of fitness enthusiasts.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
-                Join Now
-              </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 font-bold text-lg py-6 px-8">
-                Book Free Session
-              </Button>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/signup">
+                    <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
+                      Join Now
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="outline" className="border-white text-white hover:bg-white/10 font-bold text-lg py-6 px-8">
+                      Login
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -133,9 +151,11 @@ const HomePage = () => {
               <p className="text-gray-400 mb-8">
                 We provide a supportive environment where members of all fitness levels can thrive, with state-of-the-art equipment, expert coaching, and a variety of programs designed to challenge and inspire.
               </p>
-              <Button className="bg-fitness-red hover:bg-red-700">
-                Learn More About Us <ArrowRight size={16} className="ml-2" />
-              </Button>
+              <Link to="/about">
+                <Button className="bg-fitness-red hover:bg-red-700">
+                  Learn More About Us <ArrowRight size={16} className="ml-2" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -166,7 +186,6 @@ const HomePage = () => {
               image="https://images.unsplash.com/photo-1549060279-7e168fcee0c2?q=80&w=2070&auto=format&fit=crop"
               level="Intermediate"
               className="animate-on-scroll"
-              style={{animationDelay: '0.1s'}}
             />
             
             <ProgramCard
@@ -175,14 +194,15 @@ const HomePage = () => {
               image="https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?q=80&w=2070&auto=format&fit=crop"
               level="Beginner"
               className="animate-on-scroll"
-              style={{animationDelay: '0.2s'}}
             />
           </div>
           
           <div className="text-center mt-12 animate-on-scroll">
-            <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-              View All Programs <ArrowRight size={16} className="ml-2" />
-            </Button>
+            <Link to="/programs">
+              <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                View All Programs <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -227,7 +247,6 @@ const HomePage = () => {
               ]}
               popular={true}
               className="animate-on-scroll"
-              style={{animationDelay: '0.1s'}}
             />
             
             <MembershipCard
@@ -245,8 +264,15 @@ const HomePage = () => {
                 "Recovery zone access"
               ]}
               className="animate-on-scroll"
-              style={{animationDelay: '0.2s'}}
             />
+          </div>
+          
+          <div className="text-center mt-12 animate-on-scroll">
+            <Link to="/membership">
+              <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                Explore Memberships <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -285,7 +311,6 @@ const HomePage = () => {
                 facebook: "https://facebook.com"
               }}
               className="animate-on-scroll"
-              style={{animationDelay: '0.1s'}}
             />
             
             <TrainerCard
@@ -298,14 +323,15 @@ const HomePage = () => {
                 linkedin: "https://linkedin.com"
               }}
               className="animate-on-scroll"
-              style={{animationDelay: '0.2s'}}
             />
           </div>
           
           <div className="text-center mt-12 animate-on-scroll">
-            <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-              Meet All Trainers <ArrowRight size={16} className="ml-2" />
-            </Button>
+            <Link to="/trainers">
+              <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                Meet All Trainers <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -335,7 +361,6 @@ const HomePage = () => {
               role="Member since 2021"
               image="https://randomuser.me/api/portraits/men/32.jpg"
               className="animate-on-scroll"
-              style={{animationDelay: '0.1s'}}
             />
             
             <TestimonialCard
@@ -344,7 +369,6 @@ const HomePage = () => {
               role="Member since 2019"
               image="https://randomuser.me/api/portraits/women/44.jpg"
               className="animate-on-scroll"
-              style={{animationDelay: '0.2s'}}
             />
           </div>
         </div>
@@ -371,12 +395,19 @@ const HomePage = () => {
               Join HUBERT FITNESS and take the first step towards a stronger, healthier you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
-                Become a Member
-              </Button>
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 font-bold text-lg py-6 px-8">
-                Book Free Session
-              </Button>
+              {isAuthenticated ? (
+                <Link to="/dashboard">
+                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/signup">
+                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-lg py-6 px-8">
+                    Become a Member
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

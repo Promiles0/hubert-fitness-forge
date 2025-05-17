@@ -8,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username?: string;
   avatar?: string;
 }
 
@@ -17,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mockUser: User = {
         id: Math.random().toString(36).substring(2, 9),
         name: email.split('@')[0],
+        username: email.split('@')[0],
         email: email,
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${email.split('@')[0]}`,
       };
@@ -97,11 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Signup function
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (name: string, username: string, email: string, password: string) => {
     setIsLoading(true);
     try {
       // This is a mock signup - in a real app, you would connect to your backend
-      console.log("Signup attempt with:", name, email, password);
+      console.log("Signup attempt with:", name, username, email, password);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -111,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const mockUser: User = {
         id: Math.random().toString(36).substring(2, 9),
         name: name,
+        username: username,
         email: email,
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
       };

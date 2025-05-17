@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, User, Lock, Mail, ArrowRight, CheckCircle } from "lucide-react";
+import { Dumbbell, User, Mail, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" })
+    .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers and underscores" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  acceptTerms: z.boolean().refine((val) => val === true, {
-    message: "You must accept the terms and conditions",
-  }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -30,14 +29,14 @@ const SignupPage = () => {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
+      username: "",
       email: "",
       password: "",
-      acceptTerms: false,
     },
   });
 
   const onSubmit = async (data: SignupFormValues) => {
-    await signup(data.name, data.email, data.password);
+    await signup(data.name, data.username, data.email, data.password);
   };
 
   return (
@@ -45,19 +44,19 @@ const SignupPage = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in">
           <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-[#dc2626]" />
+            <Dumbbell className="h-10 w-10 text-fitness-red" />
             <h1 className="text-3xl font-bold text-white">
-              <span className="text-[#dc2626]">HUBERT</span> FITNESS
+              <span className="text-fitness-red">HUBERT</span> FITNESS
             </h1>
           </Link>
-          <p className="text-gray-400 mt-2">Create your account to start your fitness journey</p>
+          <p className="text-gray-400 mt-2">Create an account to start your fitness journey</p>
         </div>
         
         <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
           <CardHeader>
             <CardTitle className="text-xl text-white">Sign Up</CardTitle>
             <CardDescription className="text-gray-400">
-              Join HUBERT FITNESS and transform your life
+              Enter your details to create an account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,6 +73,28 @@ const SignupPage = () => {
                           <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
                           <Input
                             placeholder="John Doe"
+                            className="pl-10 bg-fitness-black border-gray-700 text-white"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-red-400" />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">Username</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
+                          <Input
+                            placeholder="johndoe"
                             className="pl-10 bg-fitness-black border-gray-700 text-white"
                             {...field}
                             disabled={isLoading}
@@ -118,7 +139,7 @@ const SignupPage = () => {
                           <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
                           <Input
                             type="password"
-                            placeholder="Create a strong password"
+                            placeholder="••••••••"
                             className="pl-10 bg-fitness-black border-gray-700 text-white"
                             {...field}
                             disabled={isLoading}
@@ -130,76 +151,35 @@ const SignupPage = () => {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="acceptTerms"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isLoading}
-                          className="data-[state=checked]:bg-[#dc2626] data-[state=checked]:border-[#dc2626]"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm text-gray-300">
-                          I agree to the{" "}
-                          <Link to="/terms" className="text-[#dc2626] hover:underline transition-colors">
-                            Terms of Service
-                          </Link>{" "}
-                          and{" "}
-                          <Link to="/privacy" className="text-[#dc2626] hover:underline transition-colors">
-                            Privacy Policy
-                          </Link>
-                        </FormLabel>
-                        <FormMessage className="text-red-400" />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
                 <Button 
                   type="submit" 
-                  className="w-full bg-[#dc2626] hover:bg-red-700 transition-colors"
+                  className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating Account..." : "Create Account"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    <>
+                      Sign Up
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex justify-center pt-0">
-            <div className="text-sm text-gray-400">
+          <CardFooter className="flex flex-col space-y-4 pt-0">
+            <div className="text-sm text-gray-400 flex justify-center">
               Already have an account?{" "}
-              <Link to="/login" className="text-[#dc2626] hover:underline transition-colors">
-                Sign in
+              <Link to="/login" className="text-fitness-red hover:underline ml-1 transition-colors">
+                Log in
               </Link>
             </div>
           </CardFooter>
         </Card>
-        
-        <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
-          <div className="flex flex-col space-y-2 items-center">
-            <h3 className="text-white font-medium">Why join HUBERT FITNESS?</h3>
-            <div className="flex flex-col space-y-2 mt-2 text-sm">
-              <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
-                <span>Personalized workout plans</span>
-              </div>
-              <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
-                <span>Expert trainer guidance</span>
-              </div>
-              <div className="flex items-center text-gray-300">
-                <CheckCircle className="h-4 w-4 text-[#dc2626] mr-2" />
-                <span>Track your fitness progress</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

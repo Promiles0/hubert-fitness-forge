@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { 
   Dumbbell, 
   Home, 
@@ -15,39 +15,25 @@ import {
   LogOut 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [notifications, setNotifications] = useState(3);
+  const { user, logout } = useAuth();
   
-  // Mock user data - in a real app, this would come from your auth/state management
-  const user = {
-    name: "Sarah Johnson",
-    avatar: "/placeholder.svg", // Placeholder for now
-    nextClass: {
-      name: "HIIT",
-      time: "6:30 PM",
-      trainer: "Michael"
-    },
-    goals: [
-      { name: "Weight Loss", current: 7.5, target: 10, unit: "kg" },
-      { name: "Attendance", current: 3, target: 4, unit: "sessions" }
-    ]
-  };
+  // Set a default username if user doesn't have one
+  const username = user?.name || "Member";
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`;
 
   const handleLogout = () => {
-    // Simulate logout
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    
-    navigate("/login");
+    logout();
+    navigate("/");
   };
 
   const isActive = (path: string) => {
@@ -56,53 +42,32 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-fitness-black flex flex-col">
-      {/* Top Navigation */}
-      <header className="bg-fitness-darkGray border-b border-gray-800 py-4">
-        <div className="container-custom">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <Dumbbell className="h-7 w-7 text-fitness-red" />
-              <h1 className="text-2xl font-bold text-white">
-                <span className="text-fitness-red">HUBERT</span> FITNESS
-              </h1>
-            </Link>
-            
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button className="text-gray-300 hover:text-white transition-colors">
-                  <Bell className="h-6 w-6" />
-                  {notifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-fitness-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {notifications}
-                    </span>
-                  )}
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-fitness-red text-white">
-                    {user.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-white">{user.name}</p>
-                  <p className="text-xs text-gray-400">Member</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Include Navbar in the dashboard */}
+      <Navbar />
 
-      <div className="flex flex-col md:flex-row flex-1">
+      {/* Main Dashboard Content */}
+      <div className="flex flex-col md:flex-row flex-1 mt-16">
         {/* Sidebar Navigation */}
         <aside className="bg-fitness-darkGray w-full md:w-64 border-r border-gray-800">
           <nav className="p-4 space-y-1">
+            <div className="flex items-center gap-3 px-4 py-3 mb-2">
+              <Avatar className="h-10 w-10 border border-fitness-red">
+                <AvatarImage src={userAvatar} alt={username} />
+                <AvatarFallback className="bg-fitness-red text-white">
+                  {username.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-white font-medium">{username}</p>
+                <p className="text-xs text-gray-400">Member</p>
+              </div>
+            </div>
+            
+            <Separator className="my-2 bg-gray-800" />
+            
             <Link to="/dashboard" 
               className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard") 
+                isActive("/dashboard") && location.pathname === "/dashboard"
                   ? "bg-fitness-red text-white" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}>
@@ -120,22 +85,16 @@ const DashboardPage = () => {
               <span>My Classes</span>
             </Link>
             
-            <Link to="/dashboard/trainers" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/trainers") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
+            <Link to="/trainers" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors
+                text-gray-300 hover:bg-gray-800 hover:text-white`}>
               <User className="h-5 w-5" />
               <span>Trainers</span>
             </Link>
             
-            <Link to="/dashboard/membership" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/membership") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
+            <Link to="/membership" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors
+                text-gray-300 hover:bg-gray-800 hover:text-white`}>
               <CreditCard className="h-5 w-5" />
               <span>My Plan</span>
             </Link>
@@ -201,16 +160,16 @@ const DashboardPage = () => {
             <div className="space-y-6">
               <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Welcome, {user.name}! 👋
+                  Welcome, {username}! 👋
                 </h2>
                 <div className="mt-4 bg-fitness-black p-4 rounded-md border border-gray-800">
                   <p className="text-gray-300 text-sm">Your Next Class:</p>
                   <div className="flex items-center mt-1">
-                    <span className="text-white font-semibold">{user.nextClass.name}</span>
+                    <span className="text-white font-semibold">HIIT</span>
                     <span className="mx-2 text-gray-500">@</span>
-                    <span className="text-fitness-red font-semibold">{user.nextClass.time}</span>
+                    <span className="text-fitness-red font-semibold">6:30 PM</span>
                     <span className="ml-2 text-gray-300">
-                      with {user.nextClass.trainer}
+                      with Michael
                     </span>
                   </div>
                 </div>
@@ -242,25 +201,41 @@ const DashboardPage = () => {
                   <h3 className="text-xl font-bold text-white mb-4">My Goals</h3>
                   
                   <div className="space-y-4">
-                    {user.goals.map((goal, index) => (
-                      <div key={index} className="bg-fitness-black p-4 rounded-md border border-gray-800">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-white font-medium">{goal.name}</p>
-                          <p className="text-fitness-red font-semibold">
-                            {goal.current}/{goal.target} {goal.unit}
-                          </p>
-                        </div>
-                        <div className="w-full bg-gray-800 rounded-full h-2.5">
-                          <div 
-                            className="bg-fitness-red h-2.5 rounded-full" 
-                            style={{ width: `${(goal.current / goal.target) * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-gray-400 text-xs mt-2">
-                          {goal.target - goal.current} {goal.unit} to go
+                    <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-white font-medium">Weight Loss</p>
+                        <p className="text-fitness-red font-semibold">
+                          7.5/10 kg
                         </p>
                       </div>
-                    ))}
+                      <div className="w-full bg-gray-800 rounded-full h-2.5">
+                        <div 
+                          className="bg-fitness-red h-2.5 rounded-full" 
+                          style={{ width: `75%` }}
+                        ></div>
+                      </div>
+                      <p className="text-gray-400 text-xs mt-2">
+                        2.5 kg to go
+                      </p>
+                    </div>
+                    
+                    <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-white font-medium">Attendance</p>
+                        <p className="text-fitness-red font-semibold">
+                          3/4 sessions
+                        </p>
+                      </div>
+                      <div className="w-full bg-gray-800 rounded-full h-2.5">
+                        <div 
+                          className="bg-fitness-red h-2.5 rounded-full" 
+                          style={{ width: `75%` }}
+                        ></div>
+                      </div>
+                      <p className="text-gray-400 text-xs mt-2">
+                        1 session to go
+                      </p>
+                    </div>
                   </div>
                   
                   <Button className="w-full mt-4 bg-fitness-red hover:bg-red-700">
@@ -328,6 +303,9 @@ const DashboardPage = () => {
           )}
         </main>
       </div>
+      
+      {/* Include Footer in the dashboard */}
+      <Footer />
     </div>
   );
 };
