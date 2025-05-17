@@ -66,15 +66,17 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10 border border-fitness-red">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
-                      <AvatarFallback className="bg-fitness-red text-white">{user?.name?.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={user?.avatar} alt={user?.username || user?.name} />
+                      <AvatarFallback className="bg-fitness-red text-white">
+                        {user?.username ? user.username.charAt(0).toUpperCase() : user?.name?.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="font-medium">{user?.name}</p>
+                      <p className="font-medium">{user?.username || user?.name}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                   </DropdownMenuLabel>
@@ -141,11 +143,13 @@ const Navbar = () => {
               <div className="pt-2 border-t border-gray-700">
                 <div className="flex items-center space-x-3 mb-4 py-2">
                   <Avatar className="h-8 w-8 border border-fitness-red">
-                    <AvatarImage src={user?.avatar} alt={user?.name} />
-                    <AvatarFallback className="bg-fitness-red text-white">{user?.name?.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user?.avatar} alt={user?.username || user?.name} />
+                    <AvatarFallback className="bg-fitness-red text-white">
+                      {user?.username ? user.username.charAt(0).toUpperCase() : user?.name?.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-white font-medium">{user?.name}</p>
+                    <p className="text-white font-medium">{user?.username || user?.name}</p>
                     <p className="text-xs text-gray-400 truncate">{user?.email}</p>
                   </div>
                 </div>

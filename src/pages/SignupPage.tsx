@@ -10,12 +10,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   username: z.string().min(3, { message: "Username must be at least 3 characters" })
-    .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers and underscores" }),
+    .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers, and underscores" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
@@ -49,14 +49,14 @@ const SignupPage = () => {
               <span className="text-fitness-red">HUBERT</span> FITNESS
             </h1>
           </Link>
-          <p className="text-gray-400 mt-2">Create an account to start your fitness journey</p>
+          <p className="text-gray-400 mt-2">Create your account to start your fitness journey</p>
         </div>
         
         <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Sign Up</CardTitle>
+            <CardTitle className="text-xl text-white">Create Account</CardTitle>
             <CardDescription className="text-gray-400">
-              Enter your details to create an account
+              Enter your details to sign up
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -83,7 +83,6 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="username"
@@ -105,7 +104,6 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="email"
@@ -127,7 +125,6 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="password"
@@ -150,7 +147,6 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
-                
                 <Button 
                   type="submit" 
                   className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
@@ -158,12 +154,12 @@ const SignupPage = () => {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      <LoadingSpinner size={16} className="mr-2" />
+                      Creating Account...
                     </>
                   ) : (
                     <>
-                      Sign Up
+                      Create Account
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}

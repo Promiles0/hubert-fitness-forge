@@ -21,6 +21,22 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
+// Layout component to wrap routes that need Navbar and Footer
+const MainLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    <Navbar />
+    {children}
+    <Footer />
+  </>
+);
+
+// Layout for auth pages without Navbar and Footer
+const AuthLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    {children}
+  </>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -32,42 +48,45 @@ const App = () => (
             {/* Public routes with Navbar and Footer */}
             <Route
               path="/"
-              element={<HomePage />}
+              element={<MainLayout><HomePage /></MainLayout>}
             />
             <Route
               path="/about"
-              element={<AboutPage />}
+              element={<MainLayout><AboutPage /></MainLayout>}
             />
             <Route
               path="/contact"
-              element={<ContactPage />}
+              element={<MainLayout><ContactPage /></MainLayout>}
             />
             <Route
               path="/programs"
-              element={<ProgramsPage />}
+              element={<MainLayout><ProgramsPage /></MainLayout>}
             />
             <Route
               path="/trainers"
-              element={<TrainersPage />}
+              element={<MainLayout><TrainersPage /></MainLayout>}
             />
             <Route
               path="/membership"
-              element={<MembershipPage />}
+              element={<MainLayout><MembershipPage /></MainLayout>}
             />
             <Route
               path="/schedule"
-              element={<SchedulePage />}
+              element={<MainLayout><SchedulePage /></MainLayout>}
             />
             
             {/* Auth routes without Navbar and Footer */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
+            <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
             
             {/* Dashboard routes */}
-            <Route path="/dashboard/*" element={<DashboardPage />} />
+            <Route 
+              path="/dashboard/*" 
+              element={<MainLayout><DashboardPage /></MainLayout>} 
+            />
             
             {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

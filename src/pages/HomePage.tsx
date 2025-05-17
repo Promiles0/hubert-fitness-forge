@@ -8,6 +8,7 @@ import ProgramCard from '@/components/ProgramCard';
 import MembershipCard from '@/components/MembershipCard';
 import TrainerCard from '@/components/TrainerCard';
 import TestimonialCard from '@/components/TestimonialCard';
+import ScrollIndicator from '@/components/ScrollIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 
 const HomePage = () => {
@@ -83,6 +84,9 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+        
+        {/* Scroll Indicator */}
+        <ScrollIndicator />
       </section>
 
       {/* Features Section */}

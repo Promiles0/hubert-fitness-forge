@@ -60,13 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Login attempt with:", email, password);
       
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // For demo purposes, we'll accept any email/password combination
       // In a real app, you would validate credentials against a backend
       const mockUser: User = {
         id: Math.random().toString(36).substring(2, 9),
-        name: email.split('@')[0],
+        name: email.split('@')[0], // Use email prefix as name
         username: email.split('@')[0],
         email: email,
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${email.split('@')[0]}`,
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Show success message
       toast({
         title: "Login successful",
-        description: `Welcome back, ${mockUser.name}!`,
+        description: `Welcome back, ${mockUser.username || mockUser.name}!`,
       });
       
       // Redirect to dashboard
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: name,
         username: username,
         email: email,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
       };
       
       // Store user in localStorage for persistence
@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Show success message
       toast({
         title: "Account created",
-        description: `Welcome to HUBERT FITNESS, ${name}!`,
+        description: `Welcome to HUBERT FITNESS, ${username}!`,
       });
       
       // Redirect to dashboard
