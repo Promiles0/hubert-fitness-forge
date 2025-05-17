@@ -41,21 +41,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if the user is already logged in (from localStorage)
   useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      try {
-        const storedUser = localStorage.getItem('hubert_fitness_user');
-        if (storedUser) {
-          // Simulate a slight delay to show loading state for demo purposes
-          await new Promise(resolve => setTimeout(resolve, 300));
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-        localStorage.removeItem('hubert_fitness_user');
-      } finally {
-        setIsLoading(false);
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('hubert_fitness_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
+      setIsLoading(false);
     };
 
     checkAuth();
@@ -73,13 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // For demo purposes, we'll accept any email/password combination
       // In a real app, you would validate credentials against a backend
-      const username = email.split('@')[0];
       const mockUser: User = {
         id: Math.random().toString(36).substring(2, 9),
-        name: username, // Use the part before @ as name
-        username: username, // Set username
+        name: email.split('@')[0],
+        username: email.split('@')[0],
         email: email,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${email.split('@')[0]}`,
       };
       
       // Store user in localStorage for persistence
@@ -91,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Show success message
       toast({
         title: "Login successful",
-        description: `Welcome back, ${username}!`,
+        description: `Welcome back, ${mockUser.name}!`,
       });
       
       // Redirect to dashboard
@@ -125,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: name,
         username: username,
         email: email,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
       };
       
       // Store user in localStorage for persistence
@@ -137,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Show success message
       toast({
         title: "Account created",
-        description: `Welcome to HUBERT FITNESS, ${username}!`,
+        description: `Welcome to HUBERT FITNESS, ${name}!`,
       });
       
       // Redirect to dashboard
@@ -156,29 +146,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
-    // Set loading true briefly to show animations
-    setIsLoading(true);
+    // Remove user from localStorage
+    localStorage.removeItem('hubert_fitness_user');
     
-    // Simulate slight delay for UX
-    setTimeout(() => {
-      // Remove user from localStorage
-      localStorage.removeItem('hubert_fitness_user');
-      
-      // Clear user from state
-      setUser(null);
-      
-      // Show success message
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-      
-      // Redirect to home page
-      navigate("/");
-      
-      // Set loading back to false
-      setIsLoading(false);
-    }, 300);
+    // Clear user from state
+    setUser(null);
+    
+    // Show success message
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    
+    // Redirect to home page
+    navigate("/");
   };
 
   // Authentication context value
