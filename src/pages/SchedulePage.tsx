@@ -391,12 +391,12 @@ const SchedulePage = () => {
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <div className="overflow-x-auto pb-4">
-                  <TabsList className="bg-fitness-darkGray p-1 w-full md:w-auto">
+                  <TabsList className="bg-fitness-darkGray p-1 w-full md:w-auto flex space-x-2">
                     {weekDays.map((day, index) => (
                       <TabsTrigger 
                         key={format(day, 'yyyy-MM-dd')} 
                         value={format(day, 'yyyy-MM-dd')}
-                        className="text-sm px-3 py-2 whitespace-nowrap data-[state=active]:bg-fitness-red data-[state=active]:text-white"
+                        className="text-sm px-3 py-2 whitespace-nowrap data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-shrink-0"
                       >
                         <div className="flex flex-col items-center">
                           <span className="font-bold">{format(day, 'EEE')}</span>

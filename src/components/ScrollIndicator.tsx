@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const ScrollIndicator = () => {
   const [isVisible, setIsVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,8 +16,21 @@ const ScrollIndicator = () => {
       }
     };
 
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkMobile();
+
+    // Event listeners
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("resize", checkMobile);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   const scrollToContent = () => {
@@ -26,7 +40,7 @@ const ScrollIndicator = () => {
     });
   };
 
-  if (!isVisible) return null;
+  if (!isVisible || isMobile) return null;
 
   return (
     <div 

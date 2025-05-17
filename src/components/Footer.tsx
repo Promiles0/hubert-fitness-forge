@@ -55,11 +55,11 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <MapPin size={20} className="mr-2 text-fitness-red shrink-0 mt-1" />
-                <span className="text-gray-400">123 Fitness Avenue, Gym City, GC 12345</span>
+                <span className="text-gray-400">JURU PARK (REBERO)</span>
               </li>
               <li className="flex items-center">
                 <Phone size={20} className="mr-2 text-fitness-red" />
-                <span className="text-gray-400">(555) 123-4567</span>
+                <span className="text-gray-400">+250 780 899 767</span>
               </li>
               <li className="flex items-center">
                 <Mail size={20} className="mr-2 text-fitness-red" />
