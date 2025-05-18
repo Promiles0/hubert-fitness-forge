@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 // Define user type
 export interface User {
@@ -19,7 +21,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 // Create the context
@@ -34,62 +36,141 @@ export const useAuth = () => {
   return context;
 };
 
+// Helper function to transform Supabase user to our User type
+const transformUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
+  if (!supabaseUser) return null;
+
+  try {
+    // Get the user's profile from the profiles table
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('name, username, avatar')
+      .eq('id', supabaseUser.id)
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: data?.name || supabaseUser.email?.split('@')[0] || '',
+      username: data?.username || supabaseUser.email?.split('@')[0] || '',
+      avatar: data?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${data?.username || supabaseUser.email?.split('@')[0]}`,
+    };
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: supabaseUser.email?.split('@')[0] || '',
+      username: supabaseUser.email?.split('@')[0] || '',
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${supabaseUser.email?.split('@')[0]}`,
+    };
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if the user is already logged in (from localStorage)
-  useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('hubert_fitness_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+  // Helper function to clean up Supabase auth state (prevents auth limbo)
+  const cleanupAuthState = () => {
+    // Remove all Supabase auth keys from localStorage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
       }
-      setIsLoading(false);
+    });
+    // Remove from sessionStorage if in use
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
+  // Set up auth state listener and check for existing session
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        
+        // Defer user profile fetching to prevent Supabase deadlocks
+        if (currentSession?.user) {
+          setTimeout(async () => {
+            const transformedUser = await transformUser(currentSession.user);
+            setUser(transformedUser);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    const initializeAuth = async () => {
+      try {
+        setIsLoading(true);
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          const transformedUser = await transformUser(currentSession.user);
+          setUser(transformedUser);
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    checkAuth();
+    initializeAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // This is a mock login - in a real app, you would connect to your backend
-      console.log("Login attempt with:", email, password);
+      // Clean up existing auth state to prevent conflicts
+      cleanupAuthState();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, we'll accept any email/password combination
-      // In a real app, you would validate credentials against a backend
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: email.split('@')[0], // Use email prefix as name
-        username: email.split('@')[0],
-        email: email,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${email.split('@')[0]}`,
-      };
-      
-      // Store user in localStorage for persistence
-      localStorage.setItem('hubert_fitness_user', JSON.stringify(mockUser));
-      
-      // Set user in state
-      setUser(mockUser);
-      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       // Show success message
       toast({
         title: "Login successful",
-        description: `Welcome back, ${mockUser.username || mockUser.name}!`,
+        description: `Welcome back!`,
       });
       
-      // Redirect to dashboard
+      // Force navigation to dashboard
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
       console.error("Login error:", error);
@@ -102,28 +183,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, username: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // This is a mock signup - in a real app, you would connect to your backend
-      console.log("Signup attempt with:", name, username, email, password);
+      // Clean up existing auth state to prevent conflicts
+      cleanupAuthState();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, we'll create a user locally
-      // In a real app, you would register the user in your backend
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: name,
-        username: username,
-        email: email,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
-      };
-      
-      // Store user in localStorage for persistence
-      localStorage.setItem('hubert_fitness_user', JSON.stringify(mockUser));
-      
-      // Set user in state
-      setUser(mockUser);
-      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
+      // Sign up with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            username,
+          },
+        },
+      });
+
+      if (error) throw error;
+
       // Show success message
       toast({
         title: "Account created",
@@ -132,10 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Redirect to dashboard
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Signup failed",
-        description: "There was an issue creating your account. Please try again.",
+        description: error.message || "There was an issue creating your account. Please try again.",
         variant: "destructive",
       });
       console.error("Signup error:", error);
@@ -145,21 +228,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Logout function
-  const logout = () => {
-    // Remove user from localStorage
-    localStorage.removeItem('hubert_fitness_user');
-    
-    // Clear user from state
-    setUser(null);
-    
-    // Show success message
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-    });
-    
-    // Redirect to home page
-    navigate("/");
+  const logout = async () => {
+    try {
+      // Clean up auth state first
+      cleanupAuthState();
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear user from state
+      setUser(null);
+      setSession(null);
+      
+      // Show success message
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      
+      // Force page reload for a clean state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Logout failed",
+        description: "There was an issue logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Authentication context value
