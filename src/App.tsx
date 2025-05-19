@@ -17,6 +17,7 @@ import ProgramsPage from "./pages/ProgramsPage";
 import TrainersPage from "./pages/TrainersPage";
 import MembershipPage from "./pages/MembershipPage";
 import SchedulePage from "./pages/SchedulePage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,13 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => (
 
 // Layout for auth pages without Navbar and Footer
 const AuthLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    {children}
+  </>
+);
+
+// Layout for admin dashboard without Navbar and Footer
+const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     {children}
   </>
@@ -83,6 +91,12 @@ const App = () => (
             <Route 
               path="/dashboard/*" 
               element={<MainLayout><DashboardPage /></MainLayout>} 
+            />
+            
+            {/* Admin Dashboard routes without Navbar and Footer */}
+            <Route 
+              path="/admin/*" 
+              element={<AdminLayout><AdminDashboardPage /></AdminLayout>} 
             />
             
             {/* Catch-all route */}
