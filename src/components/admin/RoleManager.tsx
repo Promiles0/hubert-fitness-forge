@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,13 +21,16 @@ type UserWithRoles = {
   roles: string[];
 };
 
+// Define the role type to match the Supabase enum
+type AppRole = "admin" | "member" | "trainer" | "staff";
+
 const RoleManager = () => {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("member");
-  const availableRoles = ["admin", "member", "trainer", "staff"];
+  const [selectedRole, setSelectedRole] = useState<AppRole>("member");
+  const availableRoles: AppRole[] = ["admin", "member", "trainer", "staff"];
 
   // Fetch users and their roles
   useEffect(() => {
@@ -110,12 +112,13 @@ const RoleManager = () => {
         return;
       }
       
-      // Insert the role
+      // Insert the role - fixed to properly match the Supabase types
       const { data, error } = await supabase
         .from('user_roles')
-        .insert([
-          { user_id: selectedUser, role: selectedRole }
-        ]);
+        .insert({
+          user_id: selectedUser,
+          role: selectedRole
+        });
         
       if (error) throw error;
       
@@ -149,6 +152,11 @@ const RoleManager = () => {
   // Remove role from user
   const removeRole = async (userId: string, role: string) => {
     try {
+      // Ensure the role is a valid AppRole
+      if (!availableRoles.includes(role as AppRole)) {
+        throw new Error(`Invalid role: ${role}`);
+      }
+
       const { error } = await supabase
         .from('user_roles')
         .delete()
@@ -228,7 +236,7 @@ const RoleManager = () => {
             
             <div className="flex-1">
               <Label htmlFor="select-role" className="text-white">Select Role</Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as AppRole)}>
                 <SelectTrigger id="select-role" className="bg-fitness-black border-gray-700 text-white">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>

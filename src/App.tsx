@@ -96,7 +96,7 @@ const App = () => (
             
             {/* Admin Dashboard routes without Navbar and Footer */}
             <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-            <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage><AdminSettingsPage /></AdminDashboardPage></AdminLayout>} />
+            <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
             <Route path="/admin/*" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
             
             {/* Catch-all route */}
