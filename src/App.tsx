@@ -18,6 +18,7 @@ import TrainersPage from "./pages/TrainersPage";
 import MembershipPage from "./pages/MembershipPage";
 import SchedulePage from "./pages/SchedulePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -94,10 +95,9 @@ const App = () => (
             />
             
             {/* Admin Dashboard routes without Navbar and Footer */}
-            <Route 
-              path="/admin/*" 
-              element={<AdminLayout><AdminDashboardPage /></AdminLayout>} 
-            />
+            <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+            <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage><AdminSettingsPage /></AdminDashboardPage></AdminLayout>} />
+            <Route path="/admin/*" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
             
             {/* Catch-all route */}
             <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />

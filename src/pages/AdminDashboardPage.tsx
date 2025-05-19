@@ -35,7 +35,7 @@ const AdminDashboardPage = () => {
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notifications, setNotifications] = useState(4);
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   
   // Set a default username if user doesn't have one
   const username = user?.name || "Admin";
@@ -44,17 +44,25 @@ const AdminDashboardPage = () => {
   // Check if user is authenticated and has admin permissions
   useEffect(() => {
     if (!user) {
-      navigate("/login");
+      navigate("/login", { state: { from: location.pathname } });
       toast({
         title: "Access Denied",
         description: "Please login to access the admin dashboard",
         variant: "destructive",
       });
+      return;
     }
     
-    // Here you would typically check if the user has admin role
-    // This is a placeholder for future role-based auth implementation
-  }, [user, navigate]);
+    // Check if the user has the admin role
+    if (!hasRole('admin')) {
+      navigate("/dashboard");
+      toast({
+        title: "Access Denied",
+        description: "You do not have permission to access the admin dashboard",
+        variant: "destructive",
+      });
+    }
+  }, [user, hasRole, navigate, location.pathname]);
 
   const handleLogout = () => {
     logout();

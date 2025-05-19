@@ -12,6 +12,7 @@ export interface User {
   email: string;
   username?: string;
   avatar?: string;
+  roles?: string[]; // Add roles property
 }
 
 // Define context type
@@ -19,6 +20,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasRole: (role: string) => boolean; // Add role check function
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,29 +44,40 @@ const transformUser = async (supabaseUser: SupabaseUser | null): Promise<User | 
 
   try {
     // Get the user's profile from the profiles table
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('name, username, avatar')
       .eq('id', supabaseUser.id)
       .single();
 
-    if (error) throw error;
+    if (profileError) throw profileError;
+
+    // Get the user's roles from the user_roles table
+    const { data: rolesData, error: rolesError } = await supabase
+      .rpc('get_user_roles', { _user_id: supabaseUser.id });
+
+    if (rolesError) throw rolesError;
+
+    // Transform roles data to string array
+    const roles = rolesData ? rolesData as string[] : [];
 
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
-      name: data?.name || supabaseUser.email?.split('@')[0] || '',
-      username: data?.username || supabaseUser.email?.split('@')[0] || '',
-      avatar: data?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${data?.username || supabaseUser.email?.split('@')[0]}`,
+      name: profileData?.name || supabaseUser.email?.split('@')[0] || '',
+      username: profileData?.username || supabaseUser.email?.split('@')[0] || '',
+      avatar: profileData?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${profileData?.username || supabaseUser.email?.split('@')[0]}`,
+      roles: roles,
     };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('Error fetching user profile or roles:', error);
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
       name: supabaseUser.email?.split('@')[0] || '',
       username: supabaseUser.email?.split('@')[0] || '',
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${supabaseUser.email?.split('@')[0]}`,
+      roles: [],
     };
   }
 };
@@ -136,6 +149,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Function to check if a user has a specific role
+  const hasRole = (role: string): boolean => {
+    if (!user || !user.roles) return false;
+    return user.roles.includes(role);
+  };
 
   // Login function
   const login = async (email: string, password: string) => {
@@ -263,6 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     isAuthenticated: !!user,
     isLoading,
+    hasRole,
     login,
     signup,
     logout,
