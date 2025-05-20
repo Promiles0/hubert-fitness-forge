@@ -253,7 +253,7 @@ const TrainersPage = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 flex items-center justify-center overflow-hidden">
@@ -418,7 +418,7 @@ const TrainersPage = () => {
         </div>
       </section>
       
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };

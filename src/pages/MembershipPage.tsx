@@ -148,7 +148,7 @@ const MembershipPage = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 flex items-center justify-center overflow-hidden">
@@ -587,7 +587,7 @@ const MembershipPage = () => {
         </div>
       </section>
       
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };

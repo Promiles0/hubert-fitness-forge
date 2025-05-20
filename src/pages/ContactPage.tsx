@@ -87,7 +87,7 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-2">Email Us</h3>
-                    <p className="text-gray-400">info@hubertfitness.com</p>
+                   <a href="hubertsingiza@gmail.com"> <p className="text-gray-400">hubertsingiza@gmail.com</p></a>
                     {/* <p className="text-gray-400">support@hubertfitness.com</p> */}
                   </div>
                 </div>

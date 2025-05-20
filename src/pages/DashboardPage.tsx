@@ -43,7 +43,7 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-fitness-black flex flex-col">
       {/* Include Navbar in the dashboard */}
-      <Navbar />
+      {/* <Navbar /> */}
 
       {/* Main Dashboard Content */}
       <div className="flex flex-col md:flex-row flex-1 mt-16">
@@ -305,7 +305,7 @@ const DashboardPage = () => {
       </div>
       
       {/* Include Footer in the dashboard */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

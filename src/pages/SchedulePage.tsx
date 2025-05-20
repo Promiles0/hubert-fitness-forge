@@ -396,7 +396,7 @@ const SchedulePage = () => {
                       <TabsTrigger 
                         key={format(day, 'yyyy-MM-dd')} 
                         value={format(day, 'yyyy-MM-dd')}
-                        className="text-sm px-3 py-2 whitespace-nowrap data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-shrink-0"
+                        className="text-sm px-2 py-2 whitespace-nowrap data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-shrink-0"
                       >
                         <div className="flex flex-col items-center">
                           <span className="font-bold">{format(day, 'EEE')}</span>
@@ -415,7 +415,7 @@ const SchedulePage = () => {
                   >
                     <div className="bg-fitness-darkGray rounded-lg p-6">
                       <h3 className="text-xl font-bold mb-6 text-center">
-                        Schedule for {format(day, 'EEEE, MMMM d, yyyy')}
+                        Schedule For: {format(day, 'EEEE, MMMM d, yyyy')}
                       </h3>
                       
                       {filteredClasses.length ? (

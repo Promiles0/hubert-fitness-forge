@@ -139,11 +139,11 @@ const RoleManager = () => {
         title: "Role assigned",
         description: `Successfully assigned ${selectedRole} role to user.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error assigning role:", error);
       toast({
         title: "Error assigning role",
-        description: error.message || "There was a problem assigning the role.",
+        description: error instanceof Error ? error.message : "There was a problem assigning the role.",
         variant: "destructive",
       });
     }
@@ -181,11 +181,11 @@ const RoleManager = () => {
         title: "Role removed",
         description: `Successfully removed ${role} role from user.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error removing role:", error);
       toast({
         title: "Error removing role",
-        description: error.message || "There was a problem removing the role.",
+        description: error instanceof Error ? error.message : "There was a problem removing the role.",
         variant: "destructive",
       });
     }

@@ -136,7 +136,7 @@ const SignupPage = () => {
                           <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
                           <Input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="••••••••••••••"
                             className="pl-10 bg-fitness-black border-gray-700 text-white"
                             {...field}
                             disabled={isLoading}

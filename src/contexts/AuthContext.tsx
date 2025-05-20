@@ -185,11 +185,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       // Force navigation to dashboard
-      navigate("/dashboard");
-    } catch (error: any) {
+     const transformedUser = await transformUser(data.user);
+setUser(transformedUser);
+
+if (transformedUser?.roles?.includes("admin")) {
+  navigate("/Admin");
+} else {
+  navigate("/dashboard");
+}
+
+    } catch (error: unknown) {
+      let message = "Please check your credentials and try again.";
+      if (error instanceof Error) {
+        message = error.message;
+      }// Login function
+const login = async (email: string, password: string) => {
+  setIsLoading(true);
+  try {
+    // Clean up existing auth state to prevent conflicts
+    cleanupAuthState();
+
+    // Attempt global sign out first
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (err) {
+      // Continue even if this fails
+    }
+
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    // Fetch transformed user including roles
+    const transformedUser = await transformUser(data.user);
+
+    // DEBUG: Log roles to console and show toast
+    console.log('Logged in user:', transformedUser);
+    toast({
+      title: 'Debug: Roles fetched',
+      description: JSON.stringify(transformedUser?.roles),
+      duration: 5000,
+    });
+
+    setUser(transformedUser);
+
+    // Navigate based on role
+    if (transformedUser?.roles?.includes('admin')) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  } catch (error: unknown) {
+    let message = 'Please check your credentials and try again.';
+    if (error instanceof Error) {
+      message = error.message;
+    }
+    toast({
+      title: 'Login failed',
+      description: message,
+      variant: 'destructive',
+    });
+    console.error('Login error:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: message,
         variant: "destructive",
       });
       console.error("Login error:", error);
@@ -234,10 +302,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Redirect to dashboard
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let message = "There was an issue creating your account. Please try again.";
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast({
         title: "Signup failed",
-        description: error.message || "There was an issue creating your account. Please try again.",
+        description: message,
         variant: "destructive",
       });
       console.error("Signup error:", error);

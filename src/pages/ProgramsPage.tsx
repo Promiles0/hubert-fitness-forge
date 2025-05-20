@@ -86,7 +86,7 @@ const ProgramsPage = () => {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 flex items-center justify-center overflow-hidden">
@@ -324,7 +324,7 @@ const ProgramsPage = () => {
         </div>
       </section>
       
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };
