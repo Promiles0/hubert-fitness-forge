@@ -224,7 +224,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <MembershipCard
               title="Day Pass"
-              price="$2"
+              price="$2.13"
               period="Day"
               features={[
                 "Full gym access",
@@ -238,7 +238,7 @@ const HomePage = () => {
             
             <MembershipCard
               title="Monthly"
-              price="$18.75"
+              price="$21.33"
               period="month"
               features={[
                 "Full gym access",
@@ -255,7 +255,7 @@ const HomePage = () => {
             
             <MembershipCard
               title="Annual"
-              price="$187.5"
+              price="$213.27"
               period="year"
               features={[
                 "Full gym access",
