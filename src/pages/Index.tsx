@@ -1,15 +1,8 @@
+import { Home } from "./home";
+import { Dashboard } from "./dashboard";
+import { Login } from "./login";
+import { Signup } from "./signup";
+import { ErrorPage } from "./error";
+import MembersPage from "./admin/members"; // Update import path
 
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-const Index = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    navigate('/');
-  }, [navigate]);
-
-  return null;
-};
-
-export default Index;
+export { Home, Dashboard, Login, Signup, ErrorPage, MembersPage };
