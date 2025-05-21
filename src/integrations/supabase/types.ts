@@ -9,6 +9,545 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          check_in_time: string
+          check_out_time: string | null
+          class_schedule_id: string | null
+          created_at: string
+          id: string
+          member_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          check_in_time?: string
+          check_out_time?: string | null
+          class_schedule_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          check_in_time?: string
+          check_out_time?: string | null
+          class_schedule_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_class_schedule_id_fkey"
+            columns: ["class_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "class_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          class_schedule_id: string | null
+          created_at: string
+          id: string
+          member_id: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          updated_at: string
+        }
+        Insert: {
+          class_schedule_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+        }
+        Update: {
+          class_schedule_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_class_schedule_id_fkey"
+            columns: ["class_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "class_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_schedules: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          day_of_week: number | null
+          end_time: string
+          id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          end_time: string
+          id?: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          day_of_week?: number | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedules_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          capacity: number
+          class_type: Database["public"]["Enums"]["class_type"]
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          name: string
+          recurring: boolean
+          room: string | null
+          trainer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity: number
+          class_type: Database["public"]["Enums"]["class_type"]
+          created_at?: string
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          name: string
+          recurring?: boolean
+          room?: string | null
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          class_type?: Database["public"]["Enums"]["class_type"]
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          name?: string
+          recurring?: boolean
+          room?: string | null
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_notes: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          id: string
+          member_id: string | null
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_notes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          address: string | null
+          assigned_trainer_id: string | null
+          created_at: string
+          date_of_birth: string | null
+          email: string
+          expiry_date: string | null
+          first_name: string
+          fitness_goals: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          id: string
+          join_date: string
+          last_name: string
+          medical_notes: string | null
+          membership_plan_id: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["member_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          assigned_trainer_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email: string
+          expiry_date?: string | null
+          first_name: string
+          fitness_goals?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          join_date?: string
+          last_name: string
+          medical_notes?: string | null
+          membership_plan_id?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["member_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          assigned_trainer_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          expiry_date?: string | null
+          first_name?: string
+          fitness_goals?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          id?: string
+          join_date?: string
+          last_name?: string
+          medical_notes?: string | null
+          membership_plan_id?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["member_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_membership_plan_id_fkey"
+            columns: ["membership_plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_days: number
+          features: Json | null
+          id: string
+          name: string
+          plan_type: Database["public"]["Enums"]["membership_plan_type"]
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_days: number
+          features?: Json | null
+          id?: string
+          name: string
+          plan_type: Database["public"]["Enums"]["membership_plan_type"]
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          features?: Json | null
+          id?: string
+          name?: string
+          plan_type?: Database["public"]["Enums"]["membership_plan_type"]
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message_type: Database["public"]["Enums"]["message_type"]
+          recipient_id: string | null
+          sender_id: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type: Database["public"]["Enums"]["message_type"]
+          recipient_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type?: Database["public"]["Enums"]["message_type"]
+          recipient_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string | null
+          price_per_unit: number
+          product_id: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          price_per_unit: number
+          product_id?: string | null
+          quantity: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          price_per_unit?: number
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string | null
+          payment_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          payment_id?: string | null
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string | null
+          payment_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          member_id: string | null
+          membership_plan_id: string | null
+          payment_date: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id?: string | null
+          membership_plan_id?: string | null
+          payment_date?: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id?: string | null
+          membership_plan_id?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_membership_plan_id_fkey"
+            columns: ["membership_plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -33,6 +572,90 @@ export type Database = {
           name?: string | null
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      trainers: {
+        Row: {
+          bio: string | null
+          certifications: Json | null
+          created_at: string
+          email: string
+          first_name: string
+          hourly_rate: number | null
+          id: string
+          is_active: boolean
+          last_name: string
+          phone: string | null
+          photo_url: string | null
+          specialties: Database["public"]["Enums"]["trainer_specialty"][]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string
+          email: string
+          first_name: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          last_name: string
+          phone?: string | null
+          photo_url?: string | null
+          specialties: Database["public"]["Enums"]["trainer_specialty"][]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          phone?: string | null
+          photo_url?: string | null
+          specialties?: Database["public"]["Enums"]["trainer_specialty"][]
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -76,6 +699,33 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "member" | "trainer" | "staff"
+      booking_status:
+        | "confirmed"
+        | "cancelled"
+        | "waitlisted"
+        | "attended"
+        | "no_show"
+      class_type: "group" | "personal" | "specialty" | "workshop"
+      gender_type: "male" | "female" | "other" | "prefer_not_to_say"
+      member_status: "active" | "suspended" | "expired" | "pending"
+      membership_plan_type: "monthly" | "quarterly" | "yearly" | "trial" | "vip"
+      message_type: "admin" | "customer" | "system"
+      payment_method:
+        | "card"
+        | "paypal"
+        | "cash"
+        | "mobile_money"
+        | "bank_transfer"
+      payment_status: "successful" | "pending" | "failed" | "refunded"
+      trainer_specialty:
+        | "strength"
+        | "cardio"
+        | "hiit"
+        | "yoga"
+        | "pilates"
+        | "crossfit"
+        | "nutrition"
+        | "rehabilitation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -192,6 +842,36 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "member", "trainer", "staff"],
+      booking_status: [
+        "confirmed",
+        "cancelled",
+        "waitlisted",
+        "attended",
+        "no_show",
+      ],
+      class_type: ["group", "personal", "specialty", "workshop"],
+      gender_type: ["male", "female", "other", "prefer_not_to_say"],
+      member_status: ["active", "suspended", "expired", "pending"],
+      membership_plan_type: ["monthly", "quarterly", "yearly", "trial", "vip"],
+      message_type: ["admin", "customer", "system"],
+      payment_method: [
+        "card",
+        "paypal",
+        "cash",
+        "mobile_money",
+        "bank_transfer",
+      ],
+      payment_status: ["successful", "pending", "failed", "refunded"],
+      trainer_specialty: [
+        "strength",
+        "cardio",
+        "hiit",
+        "yoga",
+        "pilates",
+        "crossfit",
+        "nutrition",
+        "rehabilitation",
+      ],
     },
   },
 } as const

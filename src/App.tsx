@@ -19,7 +19,12 @@ import MembershipPage from "./pages/MembershipPage";
 import SchedulePage from "./pages/SchedulePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
+import MembersPage from "./pages/admin/MembersPage";
+import ClassesPage from "./pages/admin/ClassesPage";
+import TrainersManagementPage from "./pages/admin/TrainersPage";
 import { AuthProvider } from "./contexts/AuthContext";
+import LoadingSpinner from "./components/LoadingSpinner";
+import { Suspense } from "react";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +51,13 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
+// Loading fallback
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-fitness-black">
+    <LoadingSpinner size={40} />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -53,55 +65,64 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Public routes with Navbar and Footer */}
-            <Route
-              path="/"
-              element={<MainLayout><HomePage /></MainLayout>}
-            />
-            <Route
-              path="/about"
-              element={<MainLayout><AboutPage /></MainLayout>}
-            />
-            <Route
-              path="/contact"
-              element={<MainLayout><ContactPage /></MainLayout>}
-            />
-            <Route
-              path="/programs"
-              element={<MainLayout><ProgramsPage /></MainLayout>}
-            />
-            <Route
-              path="/trainers"
-              element={<MainLayout><TrainersPage /></MainLayout>}
-            />
-            <Route
-              path="/membership"
-              element={<MainLayout><MembershipPage /></MainLayout>}
-            />
-            <Route
-              path="/schedule"
-              element={<MainLayout><SchedulePage /></MainLayout>}
-            />
-            
-            {/* Auth routes without Navbar and Footer */}
-            <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
-            <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
-            
-            {/* Dashboard routes */}
-            <Route 
-              path="/dashboard/*" 
-              element={<MainLayout><DashboardPage /></MainLayout>} 
-            />
-            
-            {/* Admin Dashboard routes without Navbar and Footer */}
-            <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-            <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-            <Route path="/admin/*" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              {/* Public routes with Navbar and Footer */}
+              <Route
+                path="/"
+                element={<MainLayout><HomePage /></MainLayout>}
+              />
+              <Route
+                path="/about"
+                element={<MainLayout><AboutPage /></MainLayout>}
+              />
+              <Route
+                path="/contact"
+                element={<MainLayout><ContactPage /></MainLayout>}
+              />
+              <Route
+                path="/programs"
+                element={<MainLayout><ProgramsPage /></MainLayout>}
+              />
+              <Route
+                path="/trainers"
+                element={<MainLayout><TrainersPage /></MainLayout>}
+              />
+              <Route
+                path="/membership"
+                element={<MainLayout><MembershipPage /></MainLayout>}
+              />
+              <Route
+                path="/schedule"
+                element={<MainLayout><SchedulePage /></MainLayout>}
+              />
+              
+              {/* Auth routes without Navbar and Footer */}
+              <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
+              <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
+              
+              {/* Dashboard routes */}
+              <Route 
+                path="/dashboard/*" 
+                element={<MainLayout><DashboardPage /></MainLayout>} 
+              />
+              
+              {/* Admin Dashboard routes without Navbar and Footer */}
+              <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/members" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/classes" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/trainers" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/payments" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/membership-plans" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/messages" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/reports" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/store" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

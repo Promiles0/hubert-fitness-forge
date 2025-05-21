@@ -18,8 +18,10 @@ import {
   LogOut,
   Sidebar as SidebarIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +31,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOverviewPanel from "@/components/admin/AdminOverviewPanel";
+import MembersPage from "./admin/MembersPage";
+import ClassesPage from "./admin/ClassesPage";
+import TrainersPage from "./admin/TrainersPage";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
@@ -64,6 +70,60 @@ const AdminDashboardPage = () => {
     }
   }, [user, hasRole, navigate, location.pathname]);
 
+  // Fetch dashboard statistics
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      // Get active members count
+      const { count: activeMembers, error: membersError } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
+      if (membersError) throw membersError;
+      
+      // Get today's bookings count
+      const today = new Date().toISOString().split('T')[0];
+      const { count: todayBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', `${today}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`);
+      
+      if (bookingsError) throw bookingsError;
+      
+      // Get active trainers count
+      const { count: activeTrainers, error: trainersError } = await supabase
+        .from('trainers')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+      
+      if (trainersError) throw trainersError;
+      
+      // Get total revenue this month
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('amount')
+        .gte('payment_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+        .lte('payment_date', new Date().toISOString())
+        .eq('payment_status', 'successful');
+      
+      if (paymentsError) throw paymentsError;
+      
+      const monthlyRevenue = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      
+      return {
+        activeMembers: activeMembers || 0,
+        todayBookings: todayBookings || 0,
+        activeTrainers: activeTrainers || 0,
+        monthlyRevenue
+      };
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -76,6 +136,173 @@ const AdminDashboardPage = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
+
+  // Determine which component to render based on the current path
+  const renderContent = () => {
+    switch (location.pathname) {
+      case "/admin/members":
+        return <MembersPage />;
+      case "/admin/classes":
+        return <ClassesPage />;
+      case "/admin/trainers":
+        return <TrainersPage />;
+      case "/admin":
+        return (
+          <div className="space-y-6">
+            {/* Quick Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-400">Active Members</div>
+                    <Users className="h-5 w-5 text-fitness-red" />
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.activeMembers || 0}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-400">Total active memberships</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-400">Today's Bookings</div>
+                    <Calendar className="h-5 w-5 text-fitness-red" />
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.todayBookings || 0}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-400">Classes booked today</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-400">Active Trainers</div>
+                    <User className="h-5 w-5 text-fitness-red" />
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.activeTrainers || 0}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-400">Staff ready to train</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-gray-400">Monthly Revenue</div>
+                    <DollarSign className="h-5 w-5 text-fitness-red" />
+                  </div>
+                  <div className="text-3xl font-bold">
+                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${stats?.monthlyRevenue.toFixed(2) || '0.00'}`}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-400">This month's income</div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Main Dashboard Analytics */}
+            <AdminOverviewPanel />
+            
+            {/* Recent Activity and Alerts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardHeader>
+                  <CardTitle>Recent Member Activity</CardTitle>
+                  <CardDescription className="text-gray-400">Last 24 hours</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-4">
+                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
+                      <div className="flex justify-between">
+                        <span className="font-medium">John Doe</span>
+                        <span className="text-gray-400 text-sm">2 hours ago</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">Signed up for Premium Plan</p>
+                    </li>
+                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Sarah Wilson</span>
+                        <span className="text-gray-400 text-sm">5 hours ago</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">Booked HIIT class with Michael</p>
+                    </li>
+                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Robert Johnson</span>
+                        <span className="text-gray-400 text-sm">8 hours ago</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">Renewed Monthly Membership</p>
+                    </li>
+                  </ul>
+                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                    View All Activity
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-fitness-darkGray border-gray-800 text-white">
+                <CardHeader>
+                  <CardTitle>System Alerts</CardTitle>
+                  <CardDescription className="text-gray-400">Requires attention</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-4">
+                    <li className="bg-red-900/20 p-3 rounded-md border border-red-900/50">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Payment Failed</span>
+                        <span className="text-gray-400 text-sm">High Priority</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">3 members with failed payment attempts</p>
+                    </li>
+                    <li className="bg-yellow-900/20 p-3 rounded-md border border-yellow-900/50">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Class Capacity</span>
+                        <span className="text-gray-400 text-sm">Medium Priority</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">Yoga class at 6PM is near capacity</p>
+                    </li>
+                    <li className="bg-blue-900/20 p-3 rounded-md border border-blue-900/50">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Trainer Request</span>
+                        <span className="text-gray-400 text-sm">Low Priority</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">New trainer application needs review</p>
+                    </li>
+                  </ul>
+                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
+                    Address All Alerts
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center justify-center h-64">
+            <Card className="bg-fitness-darkGray border-gray-800 text-white">
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <Settings className="h-12 w-12 text-fitness-red mx-auto mb-4" />
+                  <h3 className="text-xl font-bold mb-2">Page Under Construction</h3>
+                  <p className="text-gray-400 mb-4">
+                    This section of the admin dashboard is still being developed.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+    }
+  };
+
+  if (!user) {
+    return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
+  }
 
   return (
     <div className="min-h-screen bg-fitness-black flex flex-col">
@@ -258,92 +485,8 @@ const AdminDashboardPage = () => {
             </div>
           </div>
 
-          {/* If a specific admin page is selected, render the Outlet */}
-          {location.pathname !== "/admin" ? (
-            <Outlet />
-          ) : (
-            /* Otherwise, show the admin dashboard homepage */
-            <div className="space-y-6">
-              {/* Quick Stats Cards */}
-              <AdminStatsCards />
-              
-              {/* Main Dashboard Analytics */}
-              <AdminOverviewPanel />
-              
-              {/* Recent Activity and Alerts */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                  <CardHeader>
-                    <CardTitle>Recent Member Activity</CardTitle>
-                    <CardDescription className="text-gray-400">Last 24 hours</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-4">
-                      <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <div className="flex justify-between">
-                          <span className="font-medium">John Doe</span>
-                          <span className="text-gray-400 text-sm">2 hours ago</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">Signed up for Premium Plan</p>
-                      </li>
-                      <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Sarah Wilson</span>
-                          <span className="text-gray-400 text-sm">5 hours ago</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">Booked HIIT class with Michael</p>
-                      </li>
-                      <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Robert Johnson</span>
-                          <span className="text-gray-400 text-sm">8 hours ago</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">Renewed Monthly Membership</p>
-                      </li>
-                    </ul>
-                    <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                      View All Activity
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                  <CardHeader>
-                    <CardTitle>System Alerts</CardTitle>
-                    <CardDescription className="text-gray-400">Requires attention</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-4">
-                      <li className="bg-red-900/20 p-3 rounded-md border border-red-900/50">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Payment Failed</span>
-                          <span className="text-gray-400 text-sm">High Priority</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">3 members with failed payment attempts</p>
-                      </li>
-                      <li className="bg-yellow-900/20 p-3 rounded-md border border-yellow-900/50">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Class Capacity</span>
-                          <span className="text-gray-400 text-sm">Medium Priority</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">Yoga class at 6PM is near capacity</p>
-                      </li>
-                      <li className="bg-blue-900/20 p-3 rounded-md border border-blue-900/50">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Trainer Request</span>
-                          <span className="text-gray-400 text-sm">Low Priority</span>
-                        </div>
-                        <p className="text-gray-400 text-sm">New trainer application needs review</p>
-                      </li>
-                    </ul>
-                    <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                      Address All Alerts
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
+          {/* Render the appropriate content based on the current route */}
+          {renderContent()}
         </main>
       </div>
     </div>
