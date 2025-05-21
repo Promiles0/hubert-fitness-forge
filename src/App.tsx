@@ -19,8 +19,7 @@ import MembershipPage from "./pages/MembershipPage";
 import SchedulePage from "./pages/SchedulePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
-// Fix the import path for MembersPage
-import MembersPage from "./pages/admin/members"; 
+import MembersPage from "./pages/admin/MembersPage";
 import ClassesPage from "./pages/admin/ClassesPage";
 import TrainersManagementPage from "./pages/admin/TrainersPage";
 import { AuthProvider } from "./contexts/AuthContext";

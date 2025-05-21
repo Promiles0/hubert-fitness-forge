@@ -31,8 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminOverviewPanel from "@/components/admin/AdminOverviewPanel";
-// Fix the import path for MembersPage
-import MembersPage from "./admin/members";
+import MembersPage from "./admin/MembersPage";
 import ClassesPage from "./admin/ClassesPage";
 import TrainersPage from "./admin/TrainersPage";
 import LoadingSpinner from "@/components/LoadingSpinner";
