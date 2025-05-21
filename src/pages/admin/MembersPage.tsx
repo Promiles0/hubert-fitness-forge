@@ -247,13 +247,13 @@ const MembersPage = () => {
             
             <Select
               value={statusFilter || ""}
-              onValueChange={(value) => setStatusFilter(value || null)}
+              onValueChange={(value) => setStatusFilter(value === "" ? null : value)}
             >
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
@@ -263,13 +263,13 @@ const MembersPage = () => {
             
             <Select
               value={planFilter || ""}
-              onValueChange={(value) => setPlanFilter(value || null)}
+              onValueChange={(value) => setPlanFilter(value === "" ? null : value)}
             >
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Membership Plan" />
               </SelectTrigger>
               <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="">All Plans</SelectItem>
+                <SelectItem value="all">All Plans</SelectItem>
                 {membershipPlans?.map(plan => (
                   <SelectItem key={plan.id} value={plan.name}>
                     {plan.name}
@@ -280,13 +280,13 @@ const MembersPage = () => {
             
             <Select
               value={genderFilter || ""}
-              onValueChange={(value) => setGenderFilter(value || null)}
+              onValueChange={(value) => setGenderFilter(value === "" ? null : value)}
             >
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Gender" />
               </SelectTrigger>
               <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="">All Genders</SelectItem>
+                <SelectItem value="all">All Genders</SelectItem>
                 <SelectItem value="male">Male</SelectItem>
                 <SelectItem value="female">Female</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
@@ -296,13 +296,13 @@ const MembersPage = () => {
             
             <Select
               value={trainerFilter || ""}
-              onValueChange={(value) => setTrainerFilter(value || null)}
+              onValueChange={(value) => setTrainerFilter(value === "" ? null : value)}
             >
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Assigned Trainer" />
               </SelectTrigger>
               <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="">All Trainers</SelectItem>
+                <SelectItem value="all">All Trainers</SelectItem>
                 {trainers?.map(trainer => (
                   <SelectItem 
                     key={trainer.id} 
