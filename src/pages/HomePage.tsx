@@ -223,13 +223,13 @@ const HomePage = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <MembershipCard
-              title="Basic"
-              price="$49"
-              period="month"
+              title="Day Pass"
+              price="$2"
+              period="Day"
               features={[
                 "Full gym access",
-                "2 group classes per week",
-                "Locker room access",
+                "1 group class (If available)",
+                // "Locker room access",
                 "Fitness assessment",
                 "24/7 gym access"
               ]}
@@ -237,15 +237,15 @@ const HomePage = () => {
             />
             
             <MembershipCard
-              title="Premium"
-              price="$79"
+              title="Monthly"
+              price="$18.75"
               period="month"
               features={[
                 "Full gym access",
                 "Unlimited group classes",
                 "1 personal training session/month",
                 "Nutrition consultation",
-                "Locker room access",
+                // "Locker room access",
                 "24/7 gym access",
                 "Guest passes (2/month)"
               ]}
@@ -254,15 +254,15 @@ const HomePage = () => {
             />
             
             <MembershipCard
-              title="Elite"
-              price="$129"
-              period="month"
+              title="Annual"
+              price="$187.5"
+              period="year"
               features={[
                 "Full gym access",
                 "Unlimited group classes",
                 "4 personal training sessions/month",
                 "Quarterly nutrition consultation",
-                "Locker room access with towel service",
+                // "Locker room access with towel service",
                 "24/7 gym access",
                 "Guest passes (unlimited)",
                 "Recovery zone access"
@@ -270,7 +270,7 @@ const HomePage = () => {
               className="animate-on-scroll"
             />
           </div>
-          
+          {/* xxxxxxxxxxc */}
           <div className="text-center mt-12 animate-on-scroll">
             <Link to="/membership">
               <Button variant="outline" className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">

@@ -52,7 +52,7 @@ const TrainerProfile = ({ trainer }: { trainer: TrainerProps }) => {
           <ul className="text-gray-400 text-sm space-y-1">
             {trainer.certifications.map((cert, index) => (
               <li key={index} className="flex items-start">
-                <span className="text-fitness-red mr-2">•</span>
+                <span className="text-fitness-red mr-2">~</span>
                 <span>{cert}</span>
               </li>
             ))}
@@ -405,7 +405,7 @@ const TrainersPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-on-scroll">
               <Link to="/contact">
                 <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold py-6 px-8">
-                  Book a Session <ArrowRight className="ml-2 h-5 w-5" />
+                  Book a Session 
                 </Button>
               </Link>
               <Link to="/membership">

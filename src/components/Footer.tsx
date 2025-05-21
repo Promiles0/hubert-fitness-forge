@@ -44,9 +44,10 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-bold mb-4">Working Hours</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>Monday - Friday: 5:00 AM - 10:00 PM</li>
+              <li>Monday → Thursday </li>7:00 AM → 18:00 PM
+              {/* <li>Monday - Friday: 5:00 AM - 10:00 PM</li>
               <li>Saturday: 6:00 AM - 8:00 PM</li>
-              <li>Sunday: 6:00 AM - 6:00 PM</li>
+              <li>Sunday: 6:00 AM - 6:00 PM</li> */}
             </ul>
           </div>
 
@@ -63,7 +64,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Mail size={20} className="mr-2 text-fitness-red" />
-                <span className="text-gray-400">info@hubertfitness.com</span>
+                <span className="text-gray-400">hubertsingiza@gmail.com</span>
               </li>
             </ul>
           </div>

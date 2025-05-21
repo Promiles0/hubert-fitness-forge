@@ -148,7 +148,7 @@ const MembershipPage = () => {
 
   return (
     <>
-      {/* <Navbar /> */}
+      {/* <Nav  bar /> */}
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 flex items-center justify-center overflow-hidden">
@@ -204,7 +204,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Day Pass"
-                price="$--"
+                price="3k(rwf)"
                 period="day"
                 description="Perfect for visitors or those wanting to try our facilities before committing."
                 features={[
@@ -220,7 +220,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Monthly"
-                price="$--"
+                price="30k(rwf)"
                 period="month"
                 description="Our most popular plan for regular gym-goers who want comprehensive access."
                 features={[
@@ -238,7 +238,7 @@ const MembershipPage = () => {
             <div className="animate-on-scroll">
               <MembershipPlanCard
                 name="Annual"
-                price="$--"
+                price="320k(rwf)"
                 period="year"
                 description="Our best value plan with two months free and additional premium perks."
                 features={[
@@ -273,9 +273,9 @@ const MembershipPage = () => {
               {/* Price row */}
               <div className="grid grid-cols-5 py-5 border-b border-gray-800 bg-fitness-black/50">
                 <div className="col-span-2 text-white font-medium px-6">Price</div>
-                <div className="text-center text-white">$--/day</div>
-                <div className="text-center text-white">$--/month</div>
-                <div className="text-center text-white">$--/year</div>
+                <div className="text-center text-white">3k/day</div>
+                <div className="text-center text-white">30k/month</div>
+                <div className="text-center text-white">320k/year</div>
               </div>
               
               {/* Content */}
@@ -319,7 +319,7 @@ const MembershipPage = () => {
                     student: true
                   }}
                 />
-                
+{/*                 
                 <PriceTableRow 
                   feature="Locker Room" 
                   plans={{
@@ -328,7 +328,7 @@ const MembershipPage = () => {
                     annual: true,
                     student: true
                   }}
-                />
+                /> */}
                 
                 <PriceTableRow 
                   feature="Towel Service" 
@@ -354,7 +354,7 @@ const MembershipPage = () => {
                   feature="Fitness App Access" 
                   plans={{
                     dayPass: false,
-                    monthly: true,
+                    monthly: false,
                     annual: true,
                     student: true
                   }}
@@ -386,7 +386,7 @@ const MembershipPage = () => {
       </section>
 
       {/* Add-On Services */}
-      <section className="bg-gradient-to-b from-fitness-black to-fitness-darkGray py-20">
+      {/* <section className="bg-gradient-to-b from-fitness-black to-fitness-darkGray py-20">
         <div className="container-custom">
           <SectionTitle 
             title="Add-On Services" 
@@ -469,7 +469,7 @@ const MembershipPage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* FAQs Section */}
       <section className="bg-fitness-black py-20">
@@ -524,7 +524,9 @@ const MembershipPage = () => {
                   Do you offer student or military discounts?
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4 text-gray-300">
-                  Yes, we offer a special student rate of $--/month with valid student ID. Active military and veterans receive a 15% discount on any membership plan. These discounts cannot be combined with other promotions.
+                  Yes, Student receive a 10% discount on Monthly & Annual membership plan with valid student ID. 
+                  Active military and veterans receive a 15% discount on any membership plan. 
+                  These discounts cannot be combined with other promotions.
                 </AccordionContent>
               </AccordionItem>
               

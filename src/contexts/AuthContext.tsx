@@ -198,7 +198,8 @@ if (transformedUser?.roles?.includes("admin")) {
       let message = "Please check your credentials and try again.";
       if (error instanceof Error) {
         message = error.message;
-      }// Login function
+      }
+      // Login function
 const login = async (email: string, password: string) => {
   setIsLoading(true);
   try {
