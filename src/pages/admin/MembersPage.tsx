@@ -52,6 +52,11 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
+type TrainerData = {
+  first_name: string;
+  last_name: string;
+} | null;
+
 interface Member {
   id: string;
   first_name: string;
@@ -64,10 +69,7 @@ interface Member {
   membership_plan: {
     name: string;
   } | null;
-  trainer: {
-    first_name: string;
-    last_name: string;
-  } | null;
+  trainer: TrainerData;
   gender: string | null;
 }
 
@@ -101,7 +103,16 @@ const MembersPage = () => {
         `);
       
       if (error) throw error;
-      return data as Member[];
+      
+      // Handle potential trainer errors by normalizing the data
+      const normalizedData = data.map(member => ({
+        ...member,
+        trainer: (typeof member.trainer === 'object' && member.trainer !== null) 
+          ? member.trainer 
+          : null
+      }));
+      
+      return normalizedData as Member[];
     },
   });
 
@@ -143,8 +154,9 @@ const MembersPage = () => {
     const statusMatch = statusFilter === null || member.status === statusFilter;
     const genderMatch = genderFilter === null || member.gender === genderFilter;
     const planMatch = planFilter === null || (member.membership_plan && member.membership_plan.name === planFilter);
-    const trainerMatch = trainerFilter === null || 
-      (member.trainer && `${member.trainer.first_name} ${member.trainer.last_name}` === trainerFilter);
+    
+    const trainerName = member.trainer ? `${member.trainer.first_name} ${member.trainer.last_name}` : '';
+    const trainerMatch = trainerFilter === null || trainerName === trainerFilter;
     
     return searchMatch && statusMatch && genderMatch && planMatch && trainerMatch;
   });
