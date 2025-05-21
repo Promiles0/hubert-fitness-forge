@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Search, 
@@ -67,7 +66,7 @@ interface Member {
   trainer: {
     first_name: string;
     last_name: string;
-  } | null;
+  } | null | { error: true } & String; // Updated to handle potential error types
   gender: string | null;
 }
 
@@ -101,7 +100,7 @@ const MembersPage = () => {
         `);
       
       if (error) throw error;
-      return data as Member[];
+      return data as unknown as Member[]; // Cast to unknown first, then to Member[]
     },
   });
 
@@ -140,11 +139,16 @@ const MembersPage = () => {
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (member.phone && member.phone.includes(searchQuery));
     
-    const statusMatch = statusFilter === null || member.status === statusFilter;
-    const genderMatch = genderFilter === null || member.gender === genderFilter;
-    const planMatch = planFilter === null || (member.membership_plan && member.membership_plan.name === planFilter);
-    const trainerMatch = trainerFilter === null || 
-      (member.trainer && `${member.trainer.first_name} ${member.trainer.last_name}` === trainerFilter);
+    const statusMatch = statusFilter === null || statusFilter === "all" || member.status === statusFilter;
+    const genderMatch = genderFilter === null || genderFilter === "all" || member.gender === genderFilter;
+    const planMatch = planFilter === null || planFilter === "all" || 
+      (member.membership_plan && member.membership_plan.name === planFilter);
+    
+    // Safely check trainer match, accounting for potential error cases
+    const trainerMatch = trainerFilter === null || trainerFilter === "all" || 
+      (member.trainer && 
+       !('error' in member.trainer) && 
+       `${member.trainer.first_name} ${member.trainer.last_name}` === trainerFilter);
     
     return searchMatch && statusMatch && genderMatch && planMatch && trainerMatch;
   });
