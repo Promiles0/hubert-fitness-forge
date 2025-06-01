@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -35,6 +36,34 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+// Helper function to send welcome email
+const sendWelcomeEmail = async (name: string, email: string) => {
+  try {
+    const response = await fetch('https://aotcazibvafyqufeuplx.supabase.co/functions/v1/send-contact-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGNhemlidmFmeXF1ZmV1cGx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc1MTg3MzEsImV4cCI6MjA2MzA5NDczMX0.RgfYvyXHKe9_saBr7Mwjgo5OjlToeyEpEK0LH50aIPA`,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdGNhemlidmFmeXF1ZmV1cGx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc1MTg3MzEsImV4cCI6MjA2MzA5NDczMX0.RgfYvyXHKe9_saBr7Mwjgo5OjlToeyEpEK0LH50aIPA',
+      },
+      body: JSON.stringify({
+        type: 'welcome',
+        name,
+        email,
+      }),
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      console.log('Welcome email sent successfully');
+    } else {
+      console.error('Failed to send welcome email:', data.error);
+    }
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+  }
 };
 
 // Helper function to transform Supabase user to our User type
@@ -237,10 +266,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
+      // Send welcome email after successful signup
+      await sendWelcomeEmail(name, email);
+
       // Show success message
       toast({
         title: "Account created",
-        description: `Welcome to HUBERT FITNESS, ${username}!`,
+        description: `Welcome to HUBERT FITNESS, ${username}! Check your email for a welcome message.`,
       });
       
       // Redirect to dashboard
