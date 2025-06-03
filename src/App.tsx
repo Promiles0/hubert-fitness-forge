@@ -22,6 +22,12 @@ import AdminSettingsPage from "./pages/AdminSettingsPage";
 import MembersPage from "./pages/admin/MembersPage";
 import ClassesPage from "./pages/admin/ClassesPage";
 import TrainersManagementPage from "./pages/admin/TrainersPage";
+import DashboardOverview from "./pages/dashboard/DashboardOverview";
+import DashboardClassesPage from "./pages/dashboard/ClassesPage";
+import DashboardChatPage from "./pages/dashboard/ChatPage";
+import DashboardProfilePage from "./pages/dashboard/ProfilePage";
+import DashboardNutritionPage from "./pages/dashboard/NutritionPage";
+import DashboardSettingsPage from "./pages/dashboard/SettingsPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { Suspense } from "react";
@@ -101,11 +107,18 @@ const App = () => (
               <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
               <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
               
-              {/* Dashboard routes */}
+              {/* Dashboard routes with nested routing */}
               <Route 
-                path="/dashboard/*" 
-                element={<MainLayout><DashboardPage /></MainLayout>} 
-              />
+                path="/dashboard" 
+                element={<MainLayout><DashboardPage /></MainLayout>}
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="classes" element={<DashboardClassesPage />} />
+                <Route path="nutrition" element={<DashboardNutritionPage />} />
+                <Route path="chat" element={<DashboardChatPage />} />
+                <Route path="profile" element={<DashboardProfilePage />} />
+                <Route path="settings" element={<DashboardSettingsPage />} />
+              </Route>
               
               {/* Admin Dashboard routes without Navbar and Footer */}
               <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
