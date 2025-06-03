@@ -1,309 +1,211 @@
 
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate, Routes, Route } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Dumbbell, 
-  Home, 
+  LayoutDashboard, 
+  Users, 
   Calendar, 
-  User, 
-  CreditCard, 
   Apple, 
   MessageSquare, 
   Settings, 
-  Bell, 
-  LogOut 
+  User,
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/contexts/AuthContext";
-import NutritionPage from "./dashboard/NutritionPage";
-import ChatPage from "./dashboard/ChatPage";
-import SettingsPage from "./dashboard/SettingsPage";
-import ProfilePage from "./dashboard/ProfilePage";
-import ClassesPage from "./dashboard/ClassesPage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const DashboardPage = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const [notifications, setNotifications] = useState(3);
-  const { user, logout } = useAuth();
-  
-  // Set a default username if user doesn't have one
-  const username = user?.name || "Member";
-  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`;
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const navigation = [
+    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Classes", href: "/dashboard/classes", icon: Users },
+    { name: "Nutrition", href: "/dashboard/nutrition", icon: Apple },
+    { name: "Chat", href: "/dashboard/chat", icon: MessageSquare },
+    { name: "Profile", href: "/dashboard/profile", icon: User },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  ];
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        
+        // Fetch profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+          
+          // Get avatar URL if it exists
+          if (profileData.avatar && profileData.avatar.includes('avatars/')) {
+            const { data } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(profileData.avatar.split('avatars/')[1]);
+            setAvatarUrl(data.publicUrl);
+          } else {
+            setAvatarUrl(profileData.avatar);
+          }
+        }
+      }
+    };
+
+    getUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast.success("Signed out successfully");
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const getDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    if (profile?.name) {
+      return profile.name;
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name;
+    }
+    return user?.email?.split('@')[0] || 'User';
+  };
+
+  const getInitials = () => {
+    const name = getDisplayName();
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
-    <div className="min-h-screen bg-fitness-black flex flex-col">
-      {/* Main Dashboard Content */}
-      <div className="flex flex-col md:flex-row flex-1 mt-16">
-        {/* Sidebar Navigation */}
-        <aside className="bg-fitness-darkGray w-full md:w-64 border-r border-gray-800">
-          <nav className="p-4 space-y-1">
-            <div className="flex items-center gap-3 px-4 py-3 mb-2">
-              <Avatar className="h-10 w-10 border border-fitness-red">
-                <AvatarImage src={userAvatar} alt={username} />
+    <div className="min-h-screen bg-fitness-dark flex">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-fitness-darkGray border-r border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-800">
+            <h1 className="text-xl font-bold text-white">Hubert Fitness</h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden text-gray-400 hover:text-white"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-fitness-red text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User Profile */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="flex items-center gap-3 mb-4">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={avatarUrl || undefined} />
                 <AvatarFallback className="bg-fitness-red text-white">
-                  {username.charAt(0)}
+                  {getInitials()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="text-white font-medium">{username}</p>
-                <p className="text-xs text-gray-400">Member</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {getDisplayName()}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {user?.email}
+                </p>
               </div>
             </div>
-            
-            <Separator className="my-2 bg-gray-800" />
-            
-            <Link to="/dashboard" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard") && location.pathname === "/dashboard"
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Home className="h-5 w-5" />
-              <span>Dashboard</span>
-            </Link>
-            
-            <Link to="/dashboard/classes" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/classes") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Calendar className="h-5 w-5" />
-              <span>My Classes</span>
-            </Link>
-            
-            <Link to="/trainers" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors
-                text-gray-300 hover:bg-gray-800 hover:text-white`}>
-              <User className="h-5 w-5" />
-              <span>Trainers</span>
-            </Link>
-            
-            <Link to="/membership" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors
-                text-gray-300 hover:bg-gray-800 hover:text-white`}>
-              <CreditCard className="h-5 w-5" />
-              <span>My Plan</span>
-            </Link>
-            
-            <Link to="/dashboard/nutrition" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/nutrition") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Apple className="h-5 w-5" />
-              <span>Nutrition</span>
-            </Link>
-            
-            <Link to="/dashboard/chat" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/chat") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <MessageSquare className="h-5 w-5" />
-              <span>Chat</span>
-            </Link>
-            
-            <Link to="/dashboard/profile" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/profile") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <User className="h-5 w-5" />
-              <span>Profile</span>
-            </Link>
-            
-            <Link to="/dashboard/settings" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/dashboard/settings") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Settings className="h-5 w-5" />
-              <span>Settings</span>
-            </Link>
-            
-            <Separator className="my-2 bg-gray-800" />
-            
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-gray-300 hover:bg-gray-800 hover:text-white">
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
-          </nav>
-        </aside>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 bg-fitness-black">
-          <Routes>
-            <Route path="classes" element={<ClassesPage />} />
-            <Route path="nutrition" element={<NutritionPage />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="/" element={
-              // Dashboard homepage content
-              <div className="space-y-6">
-                <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                  <h2 className="text-2xl font-bold text-white mb-2">
-                    Welcome, {username}! 👋
-                  </h2>
-                  <div className="mt-4 bg-fitness-black p-4 rounded-md border border-gray-800">
-                    <p className="text-gray-300 text-sm">Your Next Class:</p>
-                    <div className="flex items-center mt-1">
-                      <span className="text-white font-semibold">HIIT</span>
-                      <span className="mx-2 text-gray-500">@</span>
-                      <span className="text-fitness-red font-semibold">6:30 PM</span>
-                      <span className="ml-2 text-gray-300">
-                        with Michael
-                      </span>
-                    </div>
-                  </div>
-                </div>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+        {/* Mobile header */}
+        <div className="lg:hidden bg-fitness-darkGray border-b border-gray-800 px-4 py-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Weekly Progress Chart */}
-                  <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                    <h3 className="text-xl font-bold text-white mb-4">
-                      Weekly Progress
-                    </h3>
-                    <div className="h-48 bg-fitness-black rounded-md border border-gray-800 flex items-center justify-center">
-                      <p className="text-gray-400">Progress chart will appear here</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <p className="text-gray-400 text-sm">Calories burned</p>
-                        <p className="text-white font-bold text-lg">3,250</p>
-                      </div>
-                      <div className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <p className="text-gray-400 text-sm">Sessions attended</p>
-                        <p className="text-white font-bold text-lg">6/8</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* My Goals */}
-                  <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                    <h3 className="text-xl font-bold text-white mb-4">My Goals</h3>
-                    
-                    <div className="space-y-4">
-                      <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-white font-medium">Weight Loss</p>
-                          <p className="text-fitness-red font-semibold">
-                            7.5/10 kg
-                          </p>
-                        </div>
-                        <div className="w-full bg-gray-800 rounded-full h-2.5">
-                          <div 
-                            className="bg-fitness-red h-2.5 rounded-full" 
-                            style={{ width: `75%` }}
-                          ></div>
-                        </div>
-                        <p className="text-gray-400 text-xs mt-2">
-                          2.5 kg to go
-                        </p>
-                      </div>
-                      
-                      <div className="bg-fitness-black p-4 rounded-md border border-gray-800">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-white font-medium">Attendance</p>
-                          <p className="text-fitness-red font-semibold">
-                            3/4 sessions
-                          </p>
-                        </div>
-                        <div className="w-full bg-gray-800 rounded-full h-2.5">
-                          <div 
-                            className="bg-fitness-red h-2.5 rounded-full" 
-                            style={{ width: `75%` }}
-                          ></div>
-                        </div>
-                        <p className="text-gray-400 text-xs mt-2">
-                          1 session to go
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <Button className="w-full mt-4 bg-fitness-red hover:bg-red-700">
-                      Add New Goal
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      Upcoming Classes
-                    </h3>
-                    <ul className="space-y-3 mt-4">
-                      <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <p className="text-white font-medium">Yoga</p>
-                        <p className="text-gray-400 text-sm">Tomorrow, 9:00 AM</p>
-                      </li>
-                      <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                        <p className="text-white font-medium">Strength Training</p>
-                        <p className="text-gray-400 text-sm">Wed, 5:30 PM</p>
-                      </li>
-                    </ul>
-                    <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                      View All Classes
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      Nutritional Tips
-                    </h3>
-                    <div className="bg-fitness-black p-4 rounded-md border border-gray-800 mt-4">
-                      <p className="text-white font-medium">Protein Intake</p>
-                      <p className="text-gray-400 text-sm mt-1">
-                        Aim for 1.6-2.0g of protein per kg of bodyweight for optimal muscle recovery.
-                      </p>
-                    </div>
-                    <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                      View Nutrition Plan
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-fitness-darkGray rounded-lg p-6 border border-gray-800">
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      My Trainer
-                    </h3>
-                    <div className="flex items-center mt-4 bg-fitness-black p-4 rounded-md border border-gray-800">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-fitness-red text-white">
-                          MT
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="ml-4">
-                        <p className="text-white font-medium">Michael Thompson</p>
-                        <p className="text-gray-400 text-sm">Strength Specialist</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                      Message Trainer
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            } />
-          </Routes>
+        {/* Scrollable main content */}
+        <main className="flex-1 overflow-y-auto bg-fitness-dark">
+          <div className="p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

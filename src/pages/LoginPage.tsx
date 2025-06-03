@@ -1,151 +1,204 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Dumbbell, User, Lock, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const LoginPage = () => {
-  const { login, isLoading, isAuthenticated, hasRole } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // If user is already authenticated, redirect them
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (hasRole('admin')) {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-    }
-  }, [isAuthenticated, hasRole, navigate]);
-  
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    await login(data.email, data.password);
+  useEffect(() => {
+    setMounted(true);
+    // Check for saved email
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailValid(emailRegex.test(email));
+  }, [email]);
+
+  const cleanupAuthState = () => {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // Handle remember me
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+
+        toast.success("Welcome back!");
+        // Force page reload for clean state
+        window.location.href = '/dashboard';
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-fitness-black flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-fitness-dark via-fitness-darkGray to-fitness-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 animate-fade-in">
-          <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
-            <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
-            </h1>
-          </Link>
-          <p className="text-gray-400 mt-2">Sign in to access your fitness journey</p>
-        </div>
-        
-        <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">Login</CardTitle>
-            <CardDescription className="text-gray-400">
-              Enter your credentials to access your account
-            </CardDescription>
+        <Card className="bg-fitness-darkGray/90 border-gray-800 backdrop-blur-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
+          <CardHeader className="space-y-4 text-center">
+            <div className="animate-in zoom-in-50 duration-1000 delay-300">
+              <CardTitle className="text-3xl font-bold text-white">Welcome Back</CardTitle>
+              <CardDescription className="text-gray-400 mt-2">
+                Sign in to continue your fitness journey
+              </CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            placeholder="you@example.com"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
+          <CardContent className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-500">
+                <Label htmlFor="email" className="text-white flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-fitness-red" />
+                  Email
+                  {email && emailValid && <CheckCircle className="h-4 w-4 text-green-500" />}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                  placeholder="Enter your email"
+                  required
                 />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            type="password"
-                            placeholder="••••••••••••••"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
-                  disabled={isLoading}
+              </div>
+
+              <div className="space-y-2 animate-in slide-in-from-right-4 duration-700 delay-700">
+                <Label htmlFor="password" className="text-white flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-fitness-red" />
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600 pr-10"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between animate-in slide-in-from-left-4 duration-700 delay-900">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="rounded border-gray-700 text-fitness-red focus:ring-fitness-red"
+                  />
+                  <Label htmlFor="remember" className="text-sm text-gray-400">
+                    Remember me
+                  </Label>
+                </div>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-fitness-red hover:text-red-400 transition-colors duration-300 hover:underline"
                 >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size={16} className="mr-2" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign In
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </Form>
+                  Forgot password?
+                </Link>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-fitness-red hover:bg-red-700 text-white font-semibold py-3 transition-all duration-300 transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-1100 group"
+                disabled={isLoading || !emailValid}
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="animate-in fade-in duration-700 delay-1300">
+              <Separator className="bg-gray-700" />
+              <div className="text-center mt-4">
+                <p className="text-gray-400">
+                  Don't have an account?{" "}
+                  <Link 
+                    to="/signup" 
+                    className="text-fitness-red hover:text-red-400 font-semibold transition-colors duration-300 hover:underline"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-0">
-            <div className="text-sm text-gray-400 text-center">
-              <Link to="/forgot-password" className="text-fitness-red hover:underline transition-colors">
-                Forgot your password?
-              </Link>
-            </div>
-            <div className="text-sm text-gray-400 flex justify-center">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-fitness-red hover:underline ml-1 transition-colors">
-                Sign up
-              </Link>
-            </div>
-          </CardFooter>
         </Card>
       </div>
     </div>

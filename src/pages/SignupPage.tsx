@@ -1,180 +1,267 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Dumbbell, User, Mail, Lock, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
-
-const signupSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  username: z.string().min(3, { message: "Username must be at least 3 characters" })
-    .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers, and underscores" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-});
-
-type SignupFormValues = z.infer<typeof signupSchema>;
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, Mail, User, Lock, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const SignupPage = () => {
-  const { signup, isLoading } = useAuth();
-  
-  const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      name: "",
-      username: "",
-      email: "",
-      password: "",
-    },
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [emailValid, setEmailValid] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const navigate = useNavigate();
 
-  const onSubmit = async (data: SignupFormValues) => {
-    await signup(data.name, data.username, data.email, data.password);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailValid(emailRegex.test(email));
+  }, [email]);
+
+  useEffect(() => {
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+    setPasswordStrength(strength);
+  }, [password]);
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength < 50) return "bg-red-500";
+    if (passwordStrength < 75) return "bg-yellow-500";
+    return "bg-green-500";
   };
 
+  const getPasswordStrengthText = () => {
+    if (passwordStrength < 50) return "Weak";
+    if (passwordStrength < 75) return "Good";
+    return "Strong";
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+
+    if (passwordStrength < 50) {
+      toast.error("Please choose a stronger password");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            name: `${firstName} ${lastName}`,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        toast.success("Account created successfully! Please check your email to verify your account.");
+        navigate("/login");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-fitness-black flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-fitness-dark via-fitness-darkGray to-fitness-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 animate-fade-in">
-          <Link to="/" className="inline-flex items-center gap-2 justify-center">
-            <Dumbbell className="h-10 w-10 text-fitness-red" />
-            <h1 className="text-3xl font-bold text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
-            </h1>
-          </Link>
-          <p className="text-gray-400 mt-2">Create your account to start your fitness journey</p>
-        </div>
-        
-        <Card className="bg-fitness-darkGray border-gray-700 animate-slide-up">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">Create Account</CardTitle>
-            <CardDescription className="text-gray-400">
-              Enter your details to sign up
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Full Name</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            placeholder="John Doe"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Username</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            placeholder="johndoe"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Email</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            placeholder="you@example.com"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white">Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
-                          <Input
-                            type="password"
-                            placeholder="••••••••••••••"
-                            className="pl-10 bg-fitness-black border-gray-700 text-white"
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full bg-fitness-red hover:bg-red-700 transition-colors"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size={16} className="mr-2" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    <>
-                      Create Account
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-0">
-            <div className="text-sm text-gray-400 flex justify-center">
-              Already have an account?{" "}
-              <Link to="/login" className="text-fitness-red hover:underline ml-1 transition-colors">
-                Log in
-              </Link>
+        <Card className="bg-fitness-darkGray/90 border-gray-800 backdrop-blur-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
+          <CardHeader className="space-y-4 text-center">
+            <div className="animate-in zoom-in-50 duration-1000 delay-300">
+              <CardTitle className="text-3xl font-bold text-white">Join Hubert Fitness</CardTitle>
+              <CardDescription className="text-gray-400 mt-2">
+                Start your fitness journey today
+              </CardDescription>
             </div>
-          </CardFooter>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-500">
+                  <Label htmlFor="firstName" className="text-white flex items-center gap-2">
+                    <User className="h-4 w-4 text-fitness-red" />
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                    required
+                  />
+                </div>
+                <div className="space-y-2 animate-in slide-in-from-right-4 duration-700 delay-500">
+                  <Label htmlFor="lastName" className="text-white flex items-center gap-2">
+                    <User className="h-4 w-4 text-fitness-red" />
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-700">
+                <Label htmlFor="email" className="text-white flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-fitness-red" />
+                  Email
+                  {email && (
+                    emailValid ? 
+                      <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                      <XCircle className="h-4 w-4 text-red-500" />
+                  )}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 animate-in slide-in-from-right-4 duration-700 delay-900">
+                <Label htmlFor="password" className="text-white flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-fitness-red" />
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {password && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-400">Password strength:</span>
+                      <span className={`text-sm ${passwordStrength >= 75 ? 'text-green-500' : passwordStrength >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
+                        {getPasswordStrengthText()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-500 ${getPasswordStrengthColor()}`}
+                        style={{ width: `${passwordStrength}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-1100">
+                <Label htmlFor="confirmPassword" className="text-white flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-fitness-red" />
+                  Confirm Password
+                  {confirmPassword && (
+                    password === confirmPassword ? 
+                      <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                      <XCircle className="h-4 w-4 text-red-500" />
+                  )}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-fitness-red hover:bg-red-700 text-white font-semibold py-3 transition-all duration-300 transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-1300 group"
+                disabled={isLoading || !emailValid || passwordStrength < 50 || password !== confirmPassword}
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="animate-in fade-in duration-700 delay-1500">
+              <Separator className="bg-gray-700" />
+              <div className="text-center mt-4">
+                <p className="text-gray-400">
+                  Already have an account?{" "}
+                  <Link 
+                    to="/login" 
+                    className="text-fitness-red hover:text-red-400 font-semibold transition-colors duration-300 hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

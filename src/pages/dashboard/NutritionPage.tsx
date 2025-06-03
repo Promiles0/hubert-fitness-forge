@@ -1,14 +1,20 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Apple, Droplets, Zap, Target, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { AddMealDialog } from "@/components/AddMealDialog";
 
 const NutritionPage = () => {
-  const [dailyCalories] = useState(1850);
+  const [meals, setMeals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addMealOpen, setAddMealOpen] = useState(false);
+  const [dailyCalories, setDailyCalories] = useState(0);
   const [targetCalories] = useState(2200);
   const [waterIntake] = useState(6);
   const [targetWater] = useState(8);
@@ -19,12 +25,64 @@ const NutritionPage = () => {
     fat: { current: 65, target: 80, unit: "g" }
   };
 
-  const meals = [
-    { name: "Breakfast", calories: 450, time: "8:00 AM", items: ["Oatmeal", "Banana", "Almonds"] },
-    { name: "Lunch", calories: 650, time: "12:30 PM", items: ["Grilled Chicken", "Rice", "Vegetables"] },
-    { name: "Snack", calories: 200, time: "3:00 PM", items: ["Greek Yogurt", "Berries"] },
-    { name: "Dinner", calories: 550, time: "7:00 PM", items: ["Salmon", "Sweet Potato", "Salad"] }
-  ];
+  useEffect(() => {
+    fetchMeals();
+  }, []);
+
+  const fetchMeals = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('time', { ascending: true });
+
+      if (error) throw error;
+
+      setMeals(data || []);
+      
+      // Calculate total calories for today
+      const totalCalories = (data || []).reduce((sum, meal) => sum + meal.calories, 0);
+      setDailyCalories(totalCalories);
+    } catch (error: any) {
+      toast.error("Failed to load meals");
+      console.error('Error fetching meals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMealTypeEmoji = (type: string) => {
+    const emojis = {
+      breakfast: "🌅",
+      lunch: "☀️",
+      dinner: "🌙",
+      snack: "🍎"
+    };
+    return emojis[type as keyof typeof emojis] || "🍽️";
+  };
+
+  const groupMealsByType = () => {
+    const grouped = meals.reduce((acc, meal) => {
+      if (!acc[meal.meal_type]) {
+        acc[meal.meal_type] = [];
+      }
+      acc[meal.meal_type].push(meal);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    return grouped;
+  };
+
+  const formatMealType = (type: string) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -65,9 +123,11 @@ const NutritionPage = () => {
             <Target className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">84%</div>
-            <p className="text-xs text-gray-400">Weekly target</p>
-            <Progress value={84} className="mt-2" />
+            <div className="text-2xl font-bold text-white">
+              {targetCalories > 0 ? Math.round((dailyCalories / targetCalories) * 100) : 0}%
+            </div>
+            <p className="text-xs text-gray-400">Daily target</p>
+            <Progress value={targetCalories > 0 ? (dailyCalories / targetCalories) * 100 : 0} className="mt-2" />
           </CardContent>
         </Card>
       </div>
@@ -83,35 +143,74 @@ const NutritionPage = () => {
           <div className="grid gap-4">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-semibold text-white">Today's Meals</h3>
-              <Button className="bg-fitness-red hover:bg-red-700">
+              <Button 
+                className="bg-fitness-red hover:bg-red-700"
+                onClick={() => setAddMealOpen(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Meal
               </Button>
             </div>
             
-            {meals.map((meal, index) => (
-              <Card key={index} className="bg-fitness-darkGray border-gray-800">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-white">{meal.name}</h4>
-                      <p className="text-sm text-gray-400">{meal.time}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {meal.items.map((item, itemIndex) => (
-                          <Badge key={itemIndex} variant="secondary" className="text-xs">
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-fitness-red border-t-transparent"></div>
+              </div>
+            ) : meals.length > 0 ? (
+              Object.entries(groupMealsByType()).map(([mealType, typeMeals]) => (
+                <Card key={mealType} className="bg-fitness-darkGray border-gray-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">{getMealTypeEmoji(mealType)}</span>
+                      <h4 className="font-semibold text-white text-lg">{formatMealType(mealType)}</h4>
+                      <Badge variant="secondary" className="ml-auto">
+                        {typeMeals.reduce((sum, meal) => sum + meal.calories, 0)} kcal
+                      </Badge>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-white">{meal.calories}</div>
-                      <div className="text-xs text-gray-400">kcal</div>
+                    <div className="space-y-3">
+                      {typeMeals.map((meal, index) => (
+                        <div key={index} className="border-l-2 border-fitness-red pl-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h5 className="font-medium text-white">{meal.name}</h5>
+                              <p className="text-sm text-gray-400">{meal.time}</p>
+                              {meal.items && meal.items.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {meal.items.map((item: string, itemIndex: number) => (
+                                    <Badge key={itemIndex} variant="outline" className="text-xs border-gray-600 text-gray-300">
+                                      {item}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-white">{meal.calories}</div>
+                              <div className="text-xs text-gray-400">kcal</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="bg-fitness-darkGray border-gray-800">
+                <CardContent className="p-8 text-center">
+                  <Apple className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-white font-semibold mb-2">No meals logged today</h3>
+                  <p className="text-gray-400 mb-4">Start tracking your nutrition by adding your first meal</p>
+                  <Button 
+                    className="bg-fitness-red hover:bg-red-700"
+                    onClick={() => setAddMealOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Meal
+                  </Button>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 
@@ -146,6 +245,13 @@ const NutritionPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Meal Dialog */}
+      <AddMealDialog
+        open={addMealOpen}
+        onOpenChange={setAddMealOpen}
+        onMealAdded={fetchMeals}
+      />
     </div>
   );
 };

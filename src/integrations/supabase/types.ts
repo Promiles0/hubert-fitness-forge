@@ -184,6 +184,45 @@ export type Database = {
           },
         ]
       }
+      meals: {
+        Row: {
+          calories: number
+          created_at: string
+          date: string
+          id: string
+          items: string[]
+          meal_type: string
+          name: string
+          time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          created_at?: string
+          date?: string
+          id?: string
+          items?: string[]
+          meal_type: string
+          name: string
+          time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          created_at?: string
+          date?: string
+          id?: string
+          items?: string[]
+          meal_type?: string
+          name?: string
+          time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_notes: {
         Row: {
           admin_id: string | null
@@ -550,26 +589,53 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar: string | null
           created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          first_name: string | null
+          fitness_goals: string | null
+          gender: string | null
           id: string
+          last_name: string | null
+          medical_notes: string | null
           name: string | null
+          phone: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
+          address?: string | null
           avatar?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          first_name?: string | null
+          fitness_goals?: string | null
+          gender?: string | null
           id: string
+          last_name?: string | null
+          medical_notes?: string | null
           name?: string | null
+          phone?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
+          address?: string | null
           avatar?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          first_name?: string | null
+          fitness_goals?: string | null
+          gender?: string | null
           id?: string
+          last_name?: string | null
+          medical_notes?: string | null
           name?: string | null
+          phone?: string | null
           updated_at?: string
           username?: string | null
         }
