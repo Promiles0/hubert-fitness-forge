@@ -71,40 +71,60 @@ const transformUser = async (supabaseUser: SupabaseUser | null): Promise<User | 
   if (!supabaseUser) return null;
 
   try {
-    // Get the user's profile from the profiles table
+    // Get the user's profile from the profiles table - use maybeSingle instead of single
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('name, username, avatar')
+      .select('name, username, avatar, first_name, last_name')
       .eq('id', supabaseUser.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      // Don't throw error, just continue with basic user data
+    }
 
     // Get the user's roles from the user_roles table
     const { data: rolesData, error: rolesError } = await supabase
       .rpc('get_user_roles', { _user_id: supabaseUser.id });
 
-    if (rolesError) throw rolesError;
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+      // Don't throw error, just continue without roles
+    }
 
     // Transform roles data to string array
     const roles = rolesData ? rolesData as string[] : [];
 
+    // Use profile data if available, otherwise fall back to basic user info
+    const displayName = profileData?.name || 
+                       (profileData?.first_name && profileData?.last_name ? `${profileData.first_name} ${profileData.last_name}` : null) ||
+                       supabaseUser.user_metadata?.name || 
+                       supabaseUser.email?.split('@')[0] || 
+                       'User';
+
+    const username = profileData?.username || 
+                    supabaseUser.user_metadata?.username || 
+                    supabaseUser.email?.split('@')[0] || 
+                    'user';
+
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
-      name: profileData?.name || supabaseUser.email?.split('@')[0] || '',
-      username: profileData?.username || supabaseUser.email?.split('@')[0] || '',
-      avatar: profileData?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${profileData?.username || supabaseUser.email?.split('@')[0]}`,
+      name: displayName,
+      username: username,
+      avatar: profileData?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`,
       roles: roles,
     };
   } catch (error) {
-    console.error('Error fetching user profile or roles:', error);
+    console.error('Error in transformUser:', error);
+    // Return basic user info even if profile fetch fails
+    const fallbackUsername = supabaseUser.email?.split('@')[0] || 'user';
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
-      name: supabaseUser.email?.split('@')[0] || '',
-      username: supabaseUser.email?.split('@')[0] || '',
-      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${supabaseUser.email?.split('@')[0]}`,
+      name: supabaseUser.user_metadata?.name || fallbackUsername,
+      username: fallbackUsername,
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${fallbackUsername}`,
       roles: [],
     };
   }
@@ -137,14 +157,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('Auth state change:', event, currentSession?.user?.id);
         setSession(currentSession);
         
         // Defer user profile fetching to prevent Supabase deadlocks
         if (currentSession?.user) {
           setTimeout(async () => {
-            const transformedUser = await transformUser(currentSession.user);
-            setUser(transformedUser);
-            setIsLoading(false);
+            try {
+              const transformedUser = await transformUser(currentSession.user);
+              setUser(transformedUser);
+              setIsLoading(false);
+            } catch (error) {
+              console.error('Error transforming user:', error);
+              setIsLoading(false);
+            }
           }, 0);
         } else {
           setUser(null);
@@ -158,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         setIsLoading(true);
         const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('Initial session check:', currentSession?.user?.id);
         setSession(currentSession);
         
         if (currentSession?.user) {
