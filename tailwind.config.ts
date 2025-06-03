@@ -68,6 +68,7 @@ export default {
 					black: '#000000',
 					darkGray: '#222222',
 					lightGray: '#555555',
+					dark: '#0f0f0f',
 				}
 			},
 			borderRadius: {

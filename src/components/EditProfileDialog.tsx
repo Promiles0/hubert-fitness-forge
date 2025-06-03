@@ -35,6 +35,26 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
     emergency_contact: profile?.emergency_contact || "",
   });
 
+  // Update avatarUrl when profile changes
+  useEffect(() => {
+    if (profile?.avatar) {
+      if (profile.avatar.startsWith('http')) {
+        setAvatarUrl(profile.avatar);
+      } else if (profile.avatar.includes('avatars/')) {
+        const fileName = profile.avatar.split('avatars/')[1];
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+        setAvatarUrl(data.publicUrl);
+      } else {
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(profile.avatar);
+        setAvatarUrl(data.publicUrl);
+      }
+    }
+  }, [profile?.avatar]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -83,10 +103,20 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
     try {
       setLoading(true);
 
+      // For avatar, store the full storage path for better handling
+      let avatarToStore = avatarUrl;
+      if (avatarUrl && avatarUrl.includes('/storage/v1/object/public/avatars/')) {
+        // Extract just the filename from the full URL for storage
+        const urlParts = avatarUrl.split('/avatars/');
+        if (urlParts.length > 1) {
+          avatarToStore = urlParts[1];
+        }
+      }
+
       // Prepare the profile data
       const profileData = {
         ...formData,
-        avatar: avatarUrl,
+        avatar: avatarToStore,
         name: `${formData.first_name} ${formData.last_name}`.trim(),
         updated_at: new Date().toISOString(),
       };
@@ -121,10 +151,10 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-fitness-darkGray border-gray-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-gray-600 dark:text-gray-400">
             Update your personal information and preferences
           </DialogDescription>
         </DialogHeader>
@@ -153,7 +183,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               type="button"
               variant="outline"
               size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
             >
@@ -172,55 +202,55 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name" className="text-white">First Name</Label>
+              <Label htmlFor="first_name" className="text-gray-900 dark:text-white">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => handleInputChange('first_name', e.target.value)}
-                className="bg-fitness-dark border-gray-700 text-white"
+                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name" className="text-white">Last Name</Label>
+              <Label htmlFor="last_name" className="text-gray-900 dark:text-white">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => handleInputChange('last_name', e.target.value)}
-                className="bg-fitness-dark border-gray-700 text-white"
+                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-white">Phone</Label>
+              <Label htmlFor="phone" className="text-gray-900 dark:text-white">Phone</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="bg-fitness-dark border-gray-700 text-white"
+                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date_of_birth" className="text-white">Date of Birth</Label>
+              <Label htmlFor="date_of_birth" className="text-gray-900 dark:text-white">Date of Birth</Label>
               <Input
                 id="date_of_birth"
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                className="bg-fitness-dark border-gray-700 text-white"
+                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="gender" className="text-white">Gender</Label>
+              <Label htmlFor="gender" className="text-gray-900 dark:text-white">Gender</Label>
               <select
                 id="gender"
                 value={formData.gender}
                 onChange={(e) => handleInputChange('gender', e.target.value)}
-                className="w-full px-3 py-2 bg-fitness-dark border border-gray-700 rounded-md text-white"
+                className="w-full px-3 py-2 bg-white dark:bg-fitness-dark border border-gray-300 dark:border-gray-700 rounded-md text-gray-900 dark:text-white"
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -230,46 +260,46 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emergency_contact" className="text-white">Emergency Contact</Label>
+              <Label htmlFor="emergency_contact" className="text-gray-900 dark:text-white">Emergency Contact</Label>
               <Input
                 id="emergency_contact"
                 value={formData.emergency_contact}
                 onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
-                className="bg-fitness-dark border-gray-700 text-white"
+                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-white">Address</Label>
+            <Label htmlFor="address" className="text-gray-900 dark:text-white">Address</Label>
             <Textarea
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              className="bg-fitness-dark border-gray-700 text-white"
+              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               rows={2}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fitness_goals" className="text-white">Fitness Goals</Label>
+            <Label htmlFor="fitness_goals" className="text-gray-900 dark:text-white">Fitness Goals</Label>
             <Textarea
               id="fitness_goals"
               value={formData.fitness_goals}
               onChange={(e) => handleInputChange('fitness_goals', e.target.value)}
-              className="bg-fitness-dark border-gray-700 text-white"
+              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               rows={2}
               placeholder="e.g., Weight loss, Muscle gain, Improved endurance..."
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="medical_notes" className="text-white">Medical Notes</Label>
+            <Label htmlFor="medical_notes" className="text-gray-900 dark:text-white">Medical Notes</Label>
             <Textarea
               id="medical_notes"
               value={formData.medical_notes}
               onChange={(e) => handleInputChange('medical_notes', e.target.value)}
-              className="bg-fitness-dark border-gray-700 text-white"
+              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
               rows={2}
               placeholder="Any medical conditions, allergies, or notes..."
             />
@@ -280,7 +310,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               Cancel
             </Button>

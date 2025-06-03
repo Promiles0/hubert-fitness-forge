@@ -39,14 +39,25 @@ const ProfilePage = () => {
         if (profileData) {
           setProfile(profileData);
           
-          // Get avatar URL if it exists
-          if (profileData.avatar && profileData.avatar.includes('avatars/')) {
-            const { data } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(profileData.avatar.split('avatars/')[1]);
-            setAvatarUrl(data.publicUrl);
-          } else {
-            setAvatarUrl(profileData.avatar);
+          // Fix avatar URL handling - handle different avatar formats
+          if (profileData.avatar) {
+            if (profileData.avatar.startsWith('http')) {
+              // Direct URL (like from OAuth providers or uploaded files)
+              setAvatarUrl(profileData.avatar);
+            } else if (profileData.avatar.includes('avatars/')) {
+              // Supabase storage path format: "avatars/filename"
+              const fileName = profileData.avatar.split('avatars/')[1];
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+              setAvatarUrl(data.publicUrl);
+            } else {
+              // Assume it's just a filename in the avatars bucket
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(profileData.avatar);
+              setAvatarUrl(data.publicUrl);
+            }
           }
         }
       }
@@ -98,12 +109,12 @@ const ProfilePage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">My Profile</h1>
-        <p className="text-gray-400">Manage your personal information and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage your personal information and preferences</p>
       </div>
 
       {/* Profile Header */}
-      <Card className="bg-fitness-darkGray border-gray-800">
+      <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             <div className="relative">
@@ -119,14 +130,14 @@ const ProfilePage = () => {
             </div>
             
             <div className="flex-1 text-center md:text-left">
-              <h2 className="text-2xl font-bold text-white">{getDisplayName()}</h2>
-              <p className="text-gray-400 mb-4">{user?.email}</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{getDisplayName()}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">{user?.email}</p>
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                 <Badge variant="secondary" className="bg-fitness-red/20 text-fitness-red">
                   Active Member
                 </Badge>
                 {profile?.fitness_goals && (
-                  <Badge variant="outline" className="border-gray-600 text-gray-300">
+                  <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
                     {profile.fitness_goals}
                   </Badge>
                 )}
@@ -146,10 +157,10 @@ const ProfilePage = () => {
 
       {/* Profile Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-fitness-darkGray border-gray-800">
+        <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Personal Information</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-gray-900 dark:text-white">Personal Information</CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Your basic personal details
             </CardDescription>
           </CardHeader>
@@ -157,8 +168,8 @@ const ProfilePage = () => {
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-fitness-red" />
               <div>
-                <p className="text-sm text-gray-400">Email</p>
-                <p className="text-white">{user?.email}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                <p className="text-gray-900 dark:text-white">{user?.email}</p>
               </div>
             </div>
             
@@ -166,8 +177,8 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-fitness-red" />
                 <div>
-                  <p className="text-sm text-gray-400">Phone</p>
-                  <p className="text-white">{profile.phone}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Phone</p>
+                  <p className="text-gray-900 dark:text-white">{profile.phone}</p>
                 </div>
               </div>
             )}
@@ -176,8 +187,8 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3">
                 <Calendar className="h-5 w-5 text-fitness-red" />
                 <div>
-                  <p className="text-sm text-gray-400">Date of Birth</p>
-                  <p className="text-white">{formatDate(profile.date_of_birth)}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Date of Birth</p>
+                  <p className="text-gray-900 dark:text-white">{formatDate(profile.date_of_birth)}</p>
                 </div>
               </div>
             )}
@@ -186,18 +197,18 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-fitness-red" />
                 <div>
-                  <p className="text-sm text-gray-400">Address</p>
-                  <p className="text-white">{profile.address}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Address</p>
+                  <p className="text-gray-900 dark:text-white">{profile.address}</p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-fitness-darkGray border-gray-800">
+        <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Fitness Information</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-gray-900 dark:text-white">Fitness Information</CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Your fitness goals and preferences
             </CardDescription>
           </CardHeader>
@@ -206,8 +217,8 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3">
                 <Target className="h-5 w-5 text-fitness-red" />
                 <div>
-                  <p className="text-sm text-gray-400">Fitness Goals</p>
-                  <p className="text-white">{profile.fitness_goals}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Fitness Goals</p>
+                  <p className="text-gray-900 dark:text-white">{profile.fitness_goals}</p>
                 </div>
               </div>
             )}
@@ -216,8 +227,8 @@ const ProfilePage = () => {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-fitness-red mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-400">Medical Notes</p>
-                  <p className="text-white">{profile.medical_notes}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Medical Notes</p>
+                  <p className="text-gray-900 dark:text-white">{profile.medical_notes}</p>
                 </div>
               </div>
             )}
@@ -226,14 +237,14 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-fitness-red" />
                 <div>
-                  <p className="text-sm text-gray-400">Emergency Contact</p>
-                  <p className="text-white">{profile.emergency_contact}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Emergency Contact</p>
+                  <p className="text-gray-900 dark:text-white">{profile.emergency_contact}</p>
                 </div>
               </div>
             )}
             
             {!profile?.fitness_goals && !profile?.medical_notes && !profile?.emergency_contact && (
-              <p className="text-gray-400 italic">No fitness information provided yet.</p>
+              <p className="text-gray-500 dark:text-gray-400 italic">No fitness information provided yet.</p>
             )}
           </CardContent>
         </Card>

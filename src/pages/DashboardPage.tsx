@@ -51,14 +51,25 @@ const DashboardPage = () => {
         if (profileData) {
           setProfile(profileData);
           
-          // Get avatar URL if it exists
-          if (profileData.avatar && profileData.avatar.includes('avatars/')) {
-            const { data } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(profileData.avatar.split('avatars/')[1]);
-            setAvatarUrl(data.publicUrl);
-          } else {
-            setAvatarUrl(profileData.avatar);
+          // Fix avatar URL handling - check for different avatar formats
+          if (profileData.avatar) {
+            if (profileData.avatar.startsWith('http')) {
+              // Direct URL (like from OAuth providers or uploaded files)
+              setAvatarUrl(profileData.avatar);
+            } else if (profileData.avatar.includes('avatars/')) {
+              // Supabase storage path
+              const fileName = profileData.avatar.split('avatars/')[1];
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+              setAvatarUrl(data.publicUrl);
+            } else {
+              // Assume it's a filename in the avatars bucket
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(profileData.avatar);
+              setAvatarUrl(data.publicUrl);
+            }
           }
         }
       }
@@ -107,7 +118,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-fitness-dark flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -117,17 +128,17 @@ const DashboardPage = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-fitness-darkGray border-r border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-fitness-darkGray border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-800">
-            <h1 className="text-xl font-bold text-white">Hubert Fitness</h1>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hubert Fitness</h1>
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden text-gray-400 hover:text-white"
+              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -145,7 +156,7 @@ const DashboardPage = () => {
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-fitness-red text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -157,7 +168,7 @@ const DashboardPage = () => {
           </nav>
 
           {/* User Profile */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={avatarUrl || undefined} />
@@ -166,10 +177,10 @@ const DashboardPage = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {getDisplayName()}
                 </p>
-                <p className="text-xs text-gray-400 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {user?.email}
                 </p>
               </div>
@@ -177,7 +188,7 @@ const DashboardPage = () => {
             <Button
               variant="outline"
               size="sm"
-              className="w-full border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
+              className="w-full border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -190,11 +201,11 @@ const DashboardPage = () => {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Mobile header */}
-        <div className="lg:hidden bg-fitness-darkGray border-b border-gray-800 px-4 py-3">
+        <div className="lg:hidden bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-800 px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-400 hover:text-white"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
@@ -202,7 +213,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Scrollable main content */}
-        <main className="flex-1 overflow-y-auto bg-fitness-dark">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
           <div className="p-6">
             <Outlet />
           </div>

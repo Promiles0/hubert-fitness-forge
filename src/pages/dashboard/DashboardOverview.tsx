@@ -79,21 +79,21 @@ const DashboardOverview = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Welcome back, {user?.name || 'Member'}!
         </h1>
-        <p className="text-gray-400">Here's what's happening with your fitness journey</p>
+        <p className="text-gray-600 dark:text-gray-400">Here's what's happening with your fitness journey</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="bg-fitness-darkGray border-gray-800">
+          <Card key={index} className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">{stat.title}</p>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
                   <p className={`text-xs ${stat.color}`}>{stat.trend}</p>
                 </div>
                 <stat.icon className={`h-8 w-8 ${stat.color}`} />
@@ -105,26 +105,26 @@ const DashboardOverview = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Classes */}
-        <Card className="bg-fitness-darkGray border-gray-800">
+        <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
               <Calendar className="h-5 w-5 text-fitness-red" />
               Upcoming Classes
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Your next scheduled workouts
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {upcomingClasses.map((classItem) => (
-              <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+              <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div>
-                  <h3 className="text-white font-semibold">{classItem.name}</h3>
-                  <p className="text-gray-400 text-sm">{classItem.instructor}</p>
+                  <h3 className="text-gray-900 dark:text-white font-semibold">{classItem.name}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{classItem.instructor}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-medium">{classItem.time}</p>
-                  <p className="text-gray-400 text-sm">{classItem.date}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{classItem.time}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{classItem.date}</p>
                 </div>
               </div>
             ))}
@@ -137,19 +137,19 @@ const DashboardOverview = () => {
         </Card>
 
         {/* Today's Nutrition */}
-        <Card className="bg-fitness-darkGray border-gray-800">
+        <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
               <Apple className="h-5 w-5 text-fitness-red" />
               Today's Nutrition
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Track your daily meal progress
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {todaysMeals.map((meal, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div className="flex items-center gap-3">
                   {meal.completed ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
@@ -157,13 +157,13 @@ const DashboardOverview = () => {
                     <AlertCircle className="h-5 w-5 text-gray-400" />
                   )}
                   <div>
-                    <h3 className="text-white font-semibold">{meal.type}</h3>
-                    <p className="text-gray-400 text-sm">{meal.calories} calories</p>
+                    <h3 className="text-gray-900 dark:text-white font-semibold">{meal.type}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{meal.calories} calories</p>
                   </div>
                 </div>
                 <Badge 
                   variant="outline" 
-                  className={meal.completed ? "border-green-500 text-green-500" : "border-gray-600 text-gray-400"}
+                  className={meal.completed ? "border-green-500 text-green-500" : "border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400"}
                 >
                   {meal.completed ? "Complete" : "Pending"}
                 </Badge>
@@ -179,35 +179,35 @@ const DashboardOverview = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="bg-fitness-darkGray border-gray-800">
+      <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
         <CardHeader>
-          <CardTitle className="text-white">Quick Actions</CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardTitle className="text-gray-900 dark:text-white">Quick Actions</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
             Common tasks to help you stay on track
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link to="/dashboard/classes">
-              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Button variant="outline" className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <Calendar className="h-4 w-4 mr-2" />
                 Book Class
               </Button>
             </Link>
             <Link to="/dashboard/nutrition">
-              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Button variant="outline" className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <Apple className="h-4 w-4 mr-2" />
                 Log Meal
               </Button>
             </Link>
             <Link to="/dashboard/chat">
-              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Button variant="outline" className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <Users className="h-4 w-4 mr-2" />
                 Message Trainer
               </Button>
             </Link>
             <Link to="/dashboard/profile">
-              <Button variant="outline" className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+              <Button variant="outline" className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <Target className="h-4 w-4 mr-2" />
                 Update Goals
               </Button>
