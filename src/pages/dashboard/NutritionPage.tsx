@@ -10,8 +10,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AddMealDialog } from "@/components/AddMealDialog";
 
+interface Meal {
+  id: string;
+  user_id: string;
+  name: string;
+  meal_type: string;
+  calories: number;
+  items: string[];
+  date: string;
+  time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const NutritionPage = () => {
-  const [meals, setMeals] = useState<any[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [addMealOpen, setAddMealOpen] = useState(false);
   const [dailyCalories, setDailyCalories] = useState(0);
@@ -45,10 +58,11 @@ const NutritionPage = () => {
 
       if (error) throw error;
 
-      setMeals(data || []);
+      const mealsData = data || [];
+      setMeals(mealsData);
       
       // Calculate total calories for today
-      const totalCalories = (data || []).reduce((sum, meal) => sum + meal.calories, 0);
+      const totalCalories = mealsData.reduce((sum, meal) => sum + meal.calories, 0);
       setDailyCalories(totalCalories);
     } catch (error: any) {
       toast.error("Failed to load meals");
@@ -75,7 +89,7 @@ const NutritionPage = () => {
       }
       acc[meal.meal_type].push(meal);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, Meal[]>);
 
     return grouped;
   };
