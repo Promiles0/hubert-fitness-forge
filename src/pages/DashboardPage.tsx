@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, 
   Users, 
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const DashboardPage = () => {
   const location = useLocation();
@@ -25,6 +27,7 @@ const DashboardPage = () => {
   const [profile, setProfile] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>('Member');
 
   const navigation = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -51,20 +54,17 @@ const DashboardPage = () => {
         if (profileData) {
           setProfile(profileData);
           
-          // Fix avatar URL handling - check for different avatar formats
+          // Handle avatar URL
           if (profileData.avatar) {
             if (profileData.avatar.startsWith('http')) {
-              // Direct URL (like from OAuth providers or uploaded files)
               setAvatarUrl(profileData.avatar);
             } else if (profileData.avatar.includes('avatars/')) {
-              // Supabase storage path
               const fileName = profileData.avatar.split('avatars/')[1];
               const { data } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(fileName);
               setAvatarUrl(data.publicUrl);
             } else {
-              // Assume it's a filename in the avatars bucket
               const { data } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(profileData.avatar);
@@ -72,12 +72,21 @@ const DashboardPage = () => {
             }
           }
         }
+
+        // Check user roles
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+        
+        if (roleData && roleData.length > 0) {
+          setUserRole(roleData[0].role.charAt(0).toUpperCase() + roleData[0].role.slice(1));
+        }
       }
     };
 
     getUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         navigate('/login');
@@ -112,6 +121,13 @@ const DashboardPage = () => {
     return user?.email?.split('@')[0] || 'User';
   };
 
+  const getUsername = () => {
+    if (profile?.username) {
+      return `@${profile.username}`;
+    }
+    return user?.email?.split('@')[0] || 'user';
+  };
+
   const getInitials = () => {
     const name = getDisplayName();
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -135,14 +151,40 @@ const DashboardPage = () => {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hubert Fitness</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* User Profile Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-fitness-red text-white">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {getDisplayName()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {getUsername()}
+                </p>
+                <Badge variant="secondary" className="text-xs mt-1 bg-fitness-red/20 text-fitness-red">
+                  {userRole}
+                </Badge>
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -167,24 +209,8 @@ const DashboardPage = () => {
             })}
           </nav>
 
-          {/* User Profile */}
+          {/* Sign Out */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3 mb-4">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="bg-fitness-red text-white">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {getDisplayName()}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
             <Button
               variant="outline"
               size="sm"
@@ -202,14 +228,17 @@ const DashboardPage = () => {
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         {/* Mobile header */}
         <div className="lg:hidden bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <ThemeToggle size="sm" />
+          </div>
         </div>
 
         {/* Scrollable main content */}

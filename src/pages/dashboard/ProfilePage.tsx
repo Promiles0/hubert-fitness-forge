@@ -33,26 +33,23 @@ const ProfilePage = () => {
           .single();
 
         if (error && error.code !== 'PGRST116') {
-          throw error;
+          console.error('Error fetching profile:', error);
         }
 
         if (profileData) {
           setProfile(profileData);
           
-          // Fix avatar URL handling - handle different avatar formats
+          // Handle avatar URL
           if (profileData.avatar) {
             if (profileData.avatar.startsWith('http')) {
-              // Direct URL (like from OAuth providers or uploaded files)
               setAvatarUrl(profileData.avatar);
             } else if (profileData.avatar.includes('avatars/')) {
-              // Supabase storage path format: "avatars/filename"
               const fileName = profileData.avatar.split('avatars/')[1];
               const { data } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(fileName);
               setAvatarUrl(data.publicUrl);
             } else {
-              // Assume it's just a filename in the avatars bucket
               const { data } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(profileData.avatar);
@@ -62,8 +59,8 @@ const ProfilePage = () => {
         }
       }
     } catch (error: any) {
-      toast.error("Failed to load profile");
       console.error('Error fetching profile:', error);
+      toast.error("Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -138,7 +135,7 @@ const ProfilePage = () => {
                 </Badge>
                 {profile?.fitness_goals && (
                   <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
-                    {profile.fitness_goals}
+                    {profile.fitness_goals.split(',')[0]} {/* Show first goal only */}
                   </Badge>
                 )}
               </div>
@@ -244,7 +241,16 @@ const ProfilePage = () => {
             )}
             
             {!profile?.fitness_goals && !profile?.medical_notes && !profile?.emergency_contact && (
-              <p className="text-gray-500 dark:text-gray-400 italic">No fitness information provided yet.</p>
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400 italic mb-4">No fitness information provided yet.</p>
+                <Button 
+                  onClick={() => setEditDialogOpen(true)}
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-600"
+                >
+                  Add Information
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

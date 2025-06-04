@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,40 +20,55 @@ interface EditProfileDialogProps {
 
 export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfileUpdate }: EditProfileDialogProps) => {
   const [loading, setLoading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar || "");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
-    first_name: profile?.first_name || "",
-    last_name: profile?.last_name || "",
-    phone: profile?.phone || "",
-    date_of_birth: profile?.date_of_birth || "",
-    gender: profile?.gender || "",
-    address: profile?.address || "",
-    fitness_goals: profile?.fitness_goals || "",
-    medical_notes: profile?.medical_notes || "",
-    emergency_contact: profile?.emergency_contact || "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+    date_of_birth: "",
+    gender: "",
+    address: "",
+    fitness_goals: "",
+    medical_notes: "",
+    emergency_contact: "",
   });
 
-  // Update avatarUrl when profile changes
+  // Update form data when profile or dialog opens
   useEffect(() => {
-    if (profile?.avatar) {
-      if (profile.avatar.startsWith('http')) {
-        setAvatarUrl(profile.avatar);
-      } else if (profile.avatar.includes('avatars/')) {
-        const fileName = profile.avatar.split('avatars/')[1];
-        const { data } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
-        setAvatarUrl(data.publicUrl);
-      } else {
-        const { data } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(profile.avatar);
-        setAvatarUrl(data.publicUrl);
+    if (profile) {
+      setFormData({
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        phone: profile.phone || "",
+        date_of_birth: profile.date_of_birth || "",
+        gender: profile.gender || "",
+        address: profile.address || "",
+        fitness_goals: profile.fitness_goals || "",
+        medical_notes: profile.medical_notes || "",
+        emergency_contact: profile.emergency_contact || "",
+      });
+      
+      // Handle avatar URL
+      if (profile.avatar) {
+        if (profile.avatar.startsWith('http')) {
+          setAvatarUrl(profile.avatar);
+        } else if (profile.avatar.includes('avatars/')) {
+          const fileName = profile.avatar.split('avatars/')[1];
+          const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          setAvatarUrl(data.publicUrl);
+        } else {
+          const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(profile.avatar);
+          setAvatarUrl(data.publicUrl);
+        }
       }
     }
-  }, [profile?.avatar]);
+  }, [profile, open]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -102,35 +118,36 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
     try {
       setLoading(true);
 
-      // For avatar, store the full storage path for better handling
-      let avatarToStore = avatarUrl;
-      if (avatarUrl && avatarUrl.includes('/storage/v1/object/public/avatars/')) {
-        // Extract just the filename from the full URL for storage
-        const urlParts = avatarUrl.split('/avatars/');
-        if (urlParts.length > 1) {
-          avatarToStore = urlParts[1];
-        }
-      }
-
       // Prepare the profile data
       const profileData = {
+        id: user.id,
         ...formData,
-        avatar: avatarToStore,
-        name: `${formData.first_name} ${formData.last_name}`.trim(),
+        avatar: avatarUrl || profile?.avatar || null,
+        name: `${formData.first_name} ${formData.last_name}`.trim() || null,
         updated_at: new Date().toISOString(),
       };
+
+      console.log('Saving profile data:', profileData);
 
       // Update or insert profile
       const { error } = await supabase
         .from('profiles')
-        .upsert([{ id: user.id, ...profileData }], { onConflict: 'id' });
+        .upsert(profileData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
+      toast.success("Profile updated successfully!");
       onProfileUpdate();
+      onOpenChange(false);
     } catch (error: any) {
-      toast.error("Failed to update profile");
       console.error('Error updating profile:', error);
+      toast.error(error.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -152,7 +169,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-white">Edit Profile</DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
             Update your personal information and preferences
           </DialogDescription>
@@ -206,7 +223,8 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => handleInputChange('first_name', e.target.value)}
-                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
+                placeholder="Enter your first name"
               />
             </div>
             <div className="space-y-2">
@@ -215,7 +233,8 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => handleInputChange('last_name', e.target.value)}
-                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
+                placeholder="Enter your last name"
               />
             </div>
           </div>
@@ -227,7 +246,8 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
+                placeholder="Enter your phone number"
               />
             </div>
             <div className="space-y-2">
@@ -237,7 +257,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
               />
             </div>
           </div>
@@ -249,7 +269,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 id="gender"
                 value={formData.gender}
                 onChange={(e) => handleInputChange('gender', e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-fitness-dark border border-gray-300 dark:border-gray-700 rounded-md text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 bg-white dark:bg-fitness-darkGray border border-gray-300 dark:border-gray-700 rounded-md text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -264,7 +284,8 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
                 id="emergency_contact"
                 value={formData.emergency_contact}
                 onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
-                className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
+                placeholder="Emergency contact number"
               />
             </div>
           </div>
@@ -275,8 +296,9 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+              className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
               rows={2}
+              placeholder="Enter your address"
             />
           </div>
 
@@ -286,7 +308,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               id="fitness_goals"
               value={formData.fitness_goals}
               onChange={(e) => handleInputChange('fitness_goals', e.target.value)}
-              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+              className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
               rows={2}
               placeholder="e.g., Weight loss, Muscle gain, Improved endurance..."
             />
@@ -298,7 +320,7 @@ export const EditProfileDialog = ({ open, onOpenChange, user, profile, onProfile
               id="medical_notes"
               value={formData.medical_notes}
               onChange={(e) => handleInputChange('medical_notes', e.target.value)}
-              className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+              className="bg-white dark:bg-fitness-darkGray border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red focus:ring-fitness-red"
               rows={2}
               placeholder="Any medical conditions, allergies, or notes..."
             />
