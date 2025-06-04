@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,27 @@ import { Plus, X, Clock, Utensils } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface Meal {
+  id: string;
+  user_id: string;
+  name: string;
+  meal_type: string;
+  calories: number;
+  items: string[];
+  date: string;
+  time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AddMealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onMealAdded: () => void;
+  editMeal?: Meal | null;
 }
 
-export const AddMealDialog = ({ open, onOpenChange, onMealAdded }: AddMealDialogProps) => {
+export const AddMealDialog = ({ open, onOpenChange, onMealAdded, editMeal }: AddMealDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -33,6 +47,32 @@ export const AddMealDialog = ({ open, onOpenChange, onMealAdded }: AddMealDialog
     { value: "dinner", label: "Dinner", emoji: "🌙" },
     { value: "snack", label: "Snack", emoji: "🍎" },
   ];
+
+  // Reset or populate form when dialog opens or editMeal changes
+  useEffect(() => {
+    if (open) {
+      if (editMeal) {
+        setFormData({
+          name: editMeal.name,
+          meal_type: editMeal.meal_type,
+          calories: editMeal.calories.toString(),
+          time: editMeal.time,
+          date: editMeal.date,
+        });
+        setItems(editMeal.items || []);
+      } else {
+        setFormData({
+          name: "",
+          meal_type: "breakfast",
+          calories: "",
+          time: new Date().toTimeString().slice(0, 5),
+          date: new Date().toISOString().split('T')[0],
+        });
+        setItems([]);
+      }
+      setCurrentItem("");
+    }
+  }, [open, editMeal]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -86,30 +126,30 @@ export const AddMealDialog = ({ open, onOpenChange, onMealAdded }: AddMealDialog
         time: formData.time,
       };
 
-      const { error } = await supabase
-        .from('meals')
-        .insert([mealData]);
+      if (editMeal) {
+        // Update existing meal
+        const { error } = await supabase
+          .from('meals')
+          .update(mealData)
+          .eq('id', editMeal.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Meal updated successfully!");
+      } else {
+        // Create new meal
+        const { error } = await supabase
+          .from('meals')
+          .insert([mealData]);
 
-      toast.success("Meal added successfully!");
-      
-      // Reset form
-      setFormData({
-        name: "",
-        meal_type: "breakfast",
-        calories: "",
-        time: new Date().toTimeString().slice(0, 5),
-        date: new Date().toISOString().split('T')[0],
-      });
-      setItems([]);
-      setCurrentItem("");
-      
+        if (error) throw error;
+        toast.success("Meal added successfully!");
+      }
+
       onMealAdded();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error("Failed to add meal");
-      console.error('Error adding meal:', error);
+      toast.error(editMeal ? "Failed to update meal" : "Failed to add meal");
+      console.error('Error saving meal:', error);
     } finally {
       setLoading(false);
     }
@@ -123,10 +163,10 @@ export const AddMealDialog = ({ open, onOpenChange, onMealAdded }: AddMealDialog
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Utensils className="h-5 w-5 text-fitness-red" />
-            Add New Meal
+            {editMeal ? "Edit Meal" : "Add New Meal"}
           </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Track your nutrition by adding meal details
+            {editMeal ? "Update your meal details" : "Track your nutrition by adding meal details"}
           </DialogDescription>
         </DialogHeader>
 
@@ -265,7 +305,7 @@ export const AddMealDialog = ({ open, onOpenChange, onMealAdded }: AddMealDialog
               disabled={loading}
               className="bg-fitness-red hover:bg-red-700"
             >
-              {loading ? "Adding..." : "Add Meal"}
+              {loading ? (editMeal ? "Updating..." : "Adding...") : (editMeal ? "Update Meal" : "Add Meal")}
             </Button>
           </div>
         </div>
