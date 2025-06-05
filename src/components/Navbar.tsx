@@ -5,7 +5,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import ThemeToggle from '@/components/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,9 +59,6 @@ const Navbar = () => {
             <Link to="/trainers" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Trainers</Link>
             <Link to="/schedule" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Schedule</Link>
             <Link to="/contact" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Contact</Link>
-            
-            {/* Theme Toggle */}
-            <ThemeToggle size="sm" />
             
             {/* Show different UI based on auth state */}
             {isAuthenticated ? (
@@ -120,7 +116,6 @@ const Navbar = () => {
 
           {/* Mobile Navigation Toggle */}
           <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle size="sm" />
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors"

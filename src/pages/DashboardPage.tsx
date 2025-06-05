@@ -14,11 +14,21 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Dumbbell,
+  Home
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ThemeToggle from "@/components/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const DashboardPage = () => {
   const location = useLocation();
@@ -148,9 +158,14 @@ const DashboardPage = () => {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
-          {/* Header */}
+          {/* Header with Logo */}
           <div className="flex items-center justify-between p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">Hubert Fitness</h1>
+            <Link to="/" className="flex items-center gap-2">
+              <Dumbbell className="h-6 w-6 text-fitness-red" />
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+                <span className="text-fitness-red">HUBERT</span> FITNESS
+              </h1>
+            </Link>
             <div className="flex items-center gap-2">
               <div className="hidden lg:block">
                 <ThemeToggle size="sm" />
@@ -168,25 +183,57 @@ const DashboardPage = () => {
 
           {/* User Profile Header */}
           <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 lg:h-12 lg:w-12">
-                <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="bg-fitness-red text-white text-sm lg:text-base">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {getDisplayName()}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {getUsername()}
-                </p>
-                <Badge variant="secondary" className="text-xs mt-1 bg-fitness-red/20 text-fitness-red border-0">
-                  {userRole}
-                </Badge>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full p-0 h-auto justify-start">
+                  <div className="flex items-center gap-3 w-full">
+                    <Avatar className="h-10 w-10 lg:h-12 lg:w-12">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="bg-fitness-red text-white text-sm lg:text-base">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {getDisplayName()}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {getUsername()}
+                      </p>
+                      <Badge variant="secondary" className="text-xs mt-1 bg-fitness-red/20 text-fitness-red border-0">
+                        {userRole}
+                      </Badge>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="font-medium">{getDisplayName()}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Home</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Navigation */}
@@ -210,19 +257,6 @@ const DashboardPage = () => {
               );
             })}
           </nav>
-
-          {/* Sign Out */}
-          <div className="p-3 lg:p-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
         </div>
       </div>
 

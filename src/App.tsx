@@ -51,8 +51,8 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => (
   </>
 );
 
-// Layout for admin dashboard without Navbar and Footer
-const AdminLayout = ({ children }: { children: React.ReactNode }) => (
+// Layout for dashboard pages without Navbar and Footer
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     {children}
   </>
@@ -109,10 +109,10 @@ const App = () => (
                 <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
                 <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
                 
-                {/* Dashboard routes with nested routing */}
+                {/* Dashboard routes without Navbar and Footer */}
                 <Route 
                   path="/dashboard" 
-                  element={<MainLayout><DashboardPage /></MainLayout>}
+                  element={<DashboardLayout><DashboardPage /></DashboardLayout>}
                 >
                   <Route index element={<DashboardOverview />} />
                   <Route path="classes" element={<DashboardClassesPage />} />
@@ -123,16 +123,16 @@ const App = () => (
                 </Route>
                 
                 {/* Admin Dashboard routes without Navbar and Footer */}
-                <Route path="/admin" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/members" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/classes" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/trainers" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/payments" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/membership-plans" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/messages" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/reports" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/store" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
-                <Route path="/admin/settings" element={<AdminLayout><AdminDashboardPage /></AdminLayout>} />
+                <Route path="/admin" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/members" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/classes" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/trainers" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/payments" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/membership-plans" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/messages" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/reports" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/store" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
+                <Route path="/admin/settings" element={<DashboardLayout><AdminDashboardPage /></DashboardLayout>} />
                 
                 {/* Catch-all route */}
                 <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />

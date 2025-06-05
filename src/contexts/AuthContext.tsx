@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -211,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user.roles.includes(role);
   };
 
-  // Login function
+  // Login function with role-based routing
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -243,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Welcome back!`,
       });
       
-      // Redirect based on role - admin goes to admin dashboard
+      // Redirect based on role - admin goes to admin dashboard, members to member dashboard
       if (transformedUser?.roles?.includes('admin')) {
         navigate("/admin");
       } else {

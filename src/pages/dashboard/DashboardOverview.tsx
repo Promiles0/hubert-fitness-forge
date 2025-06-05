@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Calendar, 
   Clock, 
@@ -12,13 +13,80 @@ import {
   Apple, 
   Activity,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Star,
+  Trophy,
+  Zap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const DashboardOverview = () => {
   const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user?.id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+          
+          // Handle avatar URL
+          if (profileData.avatar) {
+            if (profileData.avatar.startsWith('http')) {
+              setAvatarUrl(profileData.avatar);
+            } else if (profileData.avatar.includes('avatars/')) {
+              const fileName = profileData.avatar.split('avatars/')[1];
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+              setAvatarUrl(data.publicUrl);
+            } else {
+              const { data } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(profileData.avatar);
+              setAvatarUrl(data.publicUrl);
+            }
+          }
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
+
+  const getDisplayName = () => {
+    if (profile?.first_name && profile?.last_name) {
+      return `${profile.first_name} ${profile.last_name}`;
+    }
+    if (profile?.name) {
+      return profile.name;
+    }
+    if (user?.name) {
+      return user.name;
+    }
+    return user?.email?.split('@')[0] || 'Member';
+  };
+
+  const getInitials = () => {
+    const name = getDisplayName();
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
 
   // Mock data for demonstration
   const upcomingClasses = [
@@ -78,17 +146,84 @@ const DashboardOverview = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, {user?.name || 'Member'}!
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">Here's what's happening with your fitness journey</p>
-      </div>
+      {/* Enhanced Welcome Panel */}
+      <Card className="bg-gradient-to-r from-fitness-red to-red-600 text-white border-0 shadow-xl">
+        <CardContent className="p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
+            <div className="relative">
+              <Avatar className="h-20 w-20 lg:h-24 lg:w-24 ring-4 ring-white/20">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-white/20 text-white text-2xl">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-2">
+                <Star className="h-4 w-4 text-yellow-600 fill-yellow-600" />
+              </div>
+            </div>
+            
+            <div className="flex-1 text-center lg:text-left">
+              <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
+                <h1 className="text-2xl lg:text-3xl font-bold">
+                  Good {getTimeOfDay()}, {getDisplayName()}!
+                </h1>
+                <Zap className="h-6 w-6 text-yellow-300" />
+              </div>
+              
+              <p className="text-white/90 text-lg mb-4">
+                Ready to crush your fitness goals today? You've got this! 💪
+              </p>
+              
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30 transition-colors">
+                  <Trophy className="h-3 w-3 mr-1" />
+                  Active Member
+                </Badge>
+                <Badge className="bg-yellow-400/20 text-yellow-100 border-yellow-300/30">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  7-Day Streak
+                </Badge>
+                {profile?.fitness_goals && (
+                  <Badge className="bg-green-400/20 text-green-100 border-green-300/30">
+                    <Target className="h-3 w-3 mr-1" />
+                    {profile.fitness_goals.split(',')[0]}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex flex-col items-center lg:items-end gap-3">
+              <div className="text-center lg:text-right">
+                <p className="text-white/80 text-sm">Today's Progress</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div className="w-3/4 h-full bg-yellow-400 rounded-full"></div>
+                  </div>
+                  <span className="text-sm font-medium">75%</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                  asChild
+                >
+                  <Link to="/dashboard/classes">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Class
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
+          <Card key={index} className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -96,7 +231,9 @@ const DashboardOverview = () => {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
                   <p className={`text-xs ${stat.color}`}>{stat.trend}</p>
                 </div>
-                <stat.icon className={`h-8 w-8 ${stat.color}`} />
+                <div className={`p-3 rounded-lg bg-gray-50 dark:bg-gray-800`}>
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
               </div>
             </CardContent>
           </Card>
