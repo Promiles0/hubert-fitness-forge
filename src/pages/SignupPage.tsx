@@ -98,13 +98,13 @@ const SignupPage = () => {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fitness-dark via-fitness-darkGray to-fitness-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-fitness-dark dark:via-fitness-darkGray dark:to-fitness-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-fitness-darkGray/90 border-gray-800 backdrop-blur-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
+        <Card className="bg-white dark:bg-fitness-darkGray/90 border border-gray-200 dark:border-gray-800 backdrop-blur-sm shadow-xl dark:shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
           <CardHeader className="space-y-4 text-center">
             <div className="animate-in zoom-in-50 duration-1000 delay-300">
-              <CardTitle className="text-3xl font-bold text-white">Join Hubert Fitness</CardTitle>
-              <CardDescription className="text-gray-400 mt-2">
+              <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">Join Hubert Fitness</CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400 mt-2">
                 Start your fitness journey today
               </CardDescription>
             </div>
@@ -113,7 +113,7 @@ const SignupPage = () => {
             <form onSubmit={handleSignup} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-500">
-                  <Label htmlFor="firstName" className="text-white flex items-center gap-2">
+                  <Label htmlFor="firstName" className="text-gray-900 dark:text-white flex items-center gap-2">
                     <User className="h-4 w-4 text-fitness-red" />
                     First Name
                   </Label>
@@ -122,12 +122,12 @@ const SignupPage = () => {
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                    className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
                     required
                   />
                 </div>
                 <div className="space-y-2 animate-in slide-in-from-right-4 duration-700 delay-500">
-                  <Label htmlFor="lastName" className="text-white flex items-center gap-2">
+                  <Label htmlFor="lastName" className="text-gray-900 dark:text-white flex items-center gap-2">
                     <User className="h-4 w-4 text-fitness-red" />
                     Last Name
                   </Label>
@@ -136,14 +136,14 @@ const SignupPage = () => {
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                    className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-700">
-                <Label htmlFor="email" className="text-white flex items-center gap-2">
+                <Label htmlFor="email" className="text-gray-900 dark:text-white flex items-center gap-2">
                   <Mail className="h-4 w-4 text-fitness-red" />
                   Email
                   {email && (
@@ -157,13 +157,13 @@ const SignupPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600"
+                  className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
                   required
                 />
               </div>
 
               <div className="space-y-2 animate-in slide-in-from-right-4 duration-700 delay-900">
-                <Label htmlFor="password" className="text-white flex items-center gap-2">
+                <Label htmlFor="password" className="text-gray-900 dark:text-white flex items-center gap-2">
                   <Lock className="h-4 w-4 text-fitness-red" />
                   Password
                 </Label>
@@ -173,13 +173,13 @@ const SignupPage = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600 pr-10"
+                    className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600 pr-10"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -187,12 +187,12 @@ const SignupPage = () => {
                 {password && (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">Password strength:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Password strength:</span>
                       <span className={`text-sm ${passwordStrength >= 75 ? 'text-green-500' : passwordStrength >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
                         {getPasswordStrengthText()}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full transition-all duration-500 ${getPasswordStrengthColor()}`}
                         style={{ width: `${passwordStrength}%` }}
@@ -203,7 +203,7 @@ const SignupPage = () => {
               </div>
 
               <div className="space-y-2 animate-in slide-in-from-left-4 duration-700 delay-1100">
-                <Label htmlFor="confirmPassword" className="text-white flex items-center gap-2">
+                <Label htmlFor="confirmPassword" className="text-gray-900 dark:text-white flex items-center gap-2">
                   <Lock className="h-4 w-4 text-fitness-red" />
                   Confirm Password
                   {confirmPassword && (
@@ -218,13 +218,13 @@ const SignupPage = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="bg-fitness-dark border-gray-700 text-white focus:border-fitness-red transition-all duration-300 hover:border-gray-600 pr-10"
+                    className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600 pr-10"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -248,13 +248,13 @@ const SignupPage = () => {
             </form>
 
             <div className="animate-in fade-in duration-700 delay-1500">
-              <Separator className="bg-gray-700" />
+              <Separator className="bg-gray-200 dark:bg-gray-700" />
               <div className="text-center mt-4">
-                <p className="text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400">
                   Already have an account?{" "}
                   <Link 
                     to="/login" 
-                    className="text-fitness-red hover:text-red-400 font-semibold transition-colors duration-300 hover:underline"
+                    className="text-fitness-red hover:text-red-600 dark:hover:text-red-400 font-semibold transition-colors duration-300 hover:underline"
                   >
                     Sign in
                   </Link>

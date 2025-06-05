@@ -138,21 +138,23 @@ const DashboardPage = () => {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-fitness-darkGray border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-fitness-darkGray border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hubert Fitness</h1>
+          <div className="flex items-center justify-between p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">Hubert Fitness</h1>
             <div className="flex items-center gap-2">
-              <ThemeToggle size="sm" />
+              <div className="hidden lg:block">
+                <ThemeToggle size="sm" />
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -165,11 +167,11 @@ const DashboardPage = () => {
           </div>
 
           {/* User Profile Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-10 w-10 lg:h-12 lg:w-12">
                 <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="bg-fitness-red text-white">
+                <AvatarFallback className="bg-fitness-red text-white text-sm lg:text-base">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
@@ -180,7 +182,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {getUsername()}
                 </p>
-                <Badge variant="secondary" className="text-xs mt-1 bg-fitness-red/20 text-fitness-red">
+                <Badge variant="secondary" className="text-xs mt-1 bg-fitness-red/20 text-fitness-red border-0">
                   {userRole}
                 </Badge>
               </div>
@@ -188,17 +190,17 @@ const DashboardPage = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <nav className="flex-1 px-3 lg:px-4 py-4 lg:py-6 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? 'bg-fitness-red text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-fitness-red text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -210,11 +212,11 @@ const DashboardPage = () => {
           </nav>
 
           {/* Sign Out */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="p-3 lg:p-4 border-t border-gray-200 dark:border-gray-700">
             <Button
               variant="outline"
               size="sm"
-              className="w-full border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -225,9 +227,9 @@ const DashboardPage = () => {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
         {/* Mobile header */}
-        <div className="lg:hidden bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+        <div className="lg:hidden bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-700 px-4 py-3 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -237,13 +239,16 @@ const DashboardPage = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
+            <h2 className="font-semibold text-gray-900 dark:text-white">
+              {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
+            </h2>
             <ThemeToggle size="sm" />
           </div>
         </div>
 
         {/* Scrollable main content */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
-          <div className="p-6">
+          <div className="p-4 lg:p-6 max-w-7xl mx-auto">
             <Outlet />
           </div>
         </main>
