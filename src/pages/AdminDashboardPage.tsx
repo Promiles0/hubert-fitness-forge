@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Users, 
   Activity, 
@@ -12,116 +12,132 @@ import {
   MessageSquare, 
   FileText, 
   Store, 
-  Shield, 
   Settings, 
   Bell, 
   LogOut,
-  Sidebar as SidebarIcon,
-  ChevronLeft,
-  ChevronRight,
-  Loader2
+  Menu,
+  X,
+  Dumbbell,
+  Search,
+  Plus,
+  TrendingUp,
+  Clock,
+  Award,
+  Target,
+  Zap,
+  Home
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import AdminStatsCards from "@/components/admin/AdminStatsCards";
-import AdminOverviewPanel from "@/components/admin/AdminOverviewPanel";
-import MembersPage from "./admin/MembersPage";
-import ClassesPage from "./admin/ClassesPage";
-import TrainersPage from "./admin/TrainersPage";
+import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import ThemeToggle from "@/components/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [notifications, setNotifications] = useState(4);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout, hasRole } = useAuth();
   
-  // Set a default username if user doesn't have one
-  const username = user?.name || "Admin";
-  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`;
-
-  // Check if user is authenticated and has admin permissions
+  // Check admin access
   useEffect(() => {
     if (!user) {
       navigate("/login", { state: { from: location.pathname } });
-      toast({
-        title: "Access Denied",
-        description: "Please login to access the admin dashboard",
-        variant: "destructive",
-      });
       return;
     }
     
-    // Check if the user has the admin role
     if (!hasRole('admin')) {
       navigate("/dashboard");
-      toast({
-        title: "Access Denied",
-        description: "You do not have permission to access the admin dashboard",
-        variant: "destructive",
-      });
+      toast.error("Access denied. Admin privileges required.");
     }
   }, [user, hasRole, navigate, location.pathname]);
 
-  // Fetch dashboard statistics
+  // Fetch comprehensive dashboard statistics
   const { data: stats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['admin-dashboard-stats'],
+    queryKey: ['admin-comprehensive-stats'],
     queryFn: async () => {
-      // Get active members count
-      const { count: activeMembers, error: membersError } = await supabase
+      // Get member statistics
+      const { count: totalMembers } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true });
+      
+      const { count: activeMembers } = await supabase
         .from('members')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
-      
-      if (membersError) throw membersError;
-      
-      // Get today's bookings count
+
+      // Get class statistics
+      const { count: totalClasses } = await supabase
+        .from('classes')
+        .select('*', { count: 'exact', head: true });
+
       const today = new Date().toISOString().split('T')[0];
-      const { count: todayBookings, error: bookingsError } = await supabase
+      const { count: todayBookings } = await supabase
         .from('bookings')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', `${today}T00:00:00`)
         .lte('created_at', `${today}T23:59:59`);
-      
-      if (bookingsError) throw bookingsError;
-      
-      // Get active trainers count
-      const { count: activeTrainers, error: trainersError } = await supabase
+
+      // Get trainer statistics
+      const { count: activeTrainers } = await supabase
         .from('trainers')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
-      
-      if (trainersError) throw trainersError;
-      
-      // Get total revenue this month
+
+      // Get revenue statistics
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
-      const { data: payments, error: paymentsError } = await supabase
+      const { data: payments } = await supabase
         .from('payments')
         .select('amount')
-        .gte('payment_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-        .lte('payment_date', new Date().toISOString())
-        .eq('payment_status', 'successful');
-      
-      if (paymentsError) throw paymentsError;
+        .eq('payment_status', 'successful')
+        .gte('payment_date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`);
       
       const monthlyRevenue = payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-      
+
+      // Get recent activity
+      const { data: recentMembers } = await supabase
+        .from('members')
+        .select('first_name, last_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const { data: recentBookings } = await supabase
+        .from('bookings')
+        .select(`
+          created_at,
+          members!inner(first_name, last_name),
+          classes!inner(name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
       return {
+        totalMembers: totalMembers || 0,
         activeMembers: activeMembers || 0,
+        totalClasses: totalClasses || 0,
         todayBookings: todayBookings || 0,
         activeTrainers: activeTrainers || 0,
-        monthlyRevenue
+        monthlyRevenue,
+        recentMembers: recentMembers || [],
+        recentBookings: recentBookings || []
       };
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 30000,
   });
 
   const handleLogout = () => {
@@ -129,364 +145,472 @@ const AdminDashboardPage = () => {
     navigate("/");
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  // Determine which component to render based on the current path
-  const renderContent = () => {
-    switch (location.pathname) {
-      case "/admin/members":
-        return <MembersPage />;
-      case "/admin/classes":
-        return <ClassesPage />;
-      case "/admin/trainers":
-        return <TrainersPage />;
-      case "/admin":
-        return (
-          <div className="space-y-6">
-            {/* Quick Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-400">Active Members</div>
-                    <Users className="h-5 w-5 text-fitness-red" />
-                  </div>
-                  <div className="text-3xl font-bold">
-                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.activeMembers || 0}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-400">Total active memberships</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-400">Today's Bookings</div>
-                    <Calendar className="h-5 w-5 text-fitness-red" />
-                  </div>
-                  <div className="text-3xl font-bold">
-                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.todayBookings || 0}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-400">Classes booked today</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-400">Active Trainers</div>
-                    <User className="h-5 w-5 text-fitness-red" />
-                  </div>
-                  <div className="text-3xl font-bold">
-                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.activeTrainers || 0}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-400">Staff ready to train</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-400">Monthly Revenue</div>
-                    <DollarSign className="h-5 w-5 text-fitness-red" />
-                  </div>
-                  <div className="text-3xl font-bold">
-                    {isStatsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${stats?.monthlyRevenue.toFixed(2) || '0.00'}`}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-400">This month's income</div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Main Dashboard Analytics */}
-            <AdminOverviewPanel />
-            
-            {/* Recent Activity and Alerts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardHeader>
-                  <CardTitle>Recent Member Activity</CardTitle>
-                  <CardDescription className="text-gray-400">Last 24 hours</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
-                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                      <div className="flex justify-between">
-                        <span className="font-medium">John Doe</span>
-                        <span className="text-gray-400 text-sm">2 hours ago</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">Signed up for Premium Plan</p>
-                    </li>
-                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Sarah Wilson</span>
-                        <span className="text-gray-400 text-sm">5 hours ago</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">Booked HIIT class with Michael</p>
-                    </li>
-                    <li className="bg-fitness-black p-3 rounded-md border border-gray-800">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Robert Johnson</span>
-                        <span className="text-gray-400 text-sm">8 hours ago</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">Renewed Monthly Membership</p>
-                    </li>
-                  </ul>
-                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                    View All Activity
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-fitness-darkGray border-gray-800 text-white">
-                <CardHeader>
-                  <CardTitle>System Alerts</CardTitle>
-                  <CardDescription className="text-gray-400">Requires attention</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-4">
-                    <li className="bg-red-900/20 p-3 rounded-md border border-red-900/50">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Payment Failed</span>
-                        <span className="text-gray-400 text-sm">High Priority</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">3 members with failed payment attempts</p>
-                    </li>
-                    <li className="bg-yellow-900/20 p-3 rounded-md border border-yellow-900/50">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Class Capacity</span>
-                        <span className="text-gray-400 text-sm">Medium Priority</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">Yoga class at 6PM is near capacity</p>
-                    </li>
-                    <li className="bg-blue-900/20 p-3 rounded-md border border-blue-900/50">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Trainer Request</span>
-                        <span className="text-gray-400 text-sm">Low Priority</span>
-                      </div>
-                      <p className="text-gray-400 text-sm">New trainer application needs review</p>
-                    </li>
-                  </ul>
-                  <Button variant="outline" className="w-full mt-4 border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white">
-                    Address All Alerts
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center justify-center h-64">
-            <Card className="bg-fitness-darkGray border-gray-800 text-white">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <Settings className="h-12 w-12 text-fitness-red mx-auto mb-4" />
-                  <h3 className="text-xl font-bold mb-2">Page Under Construction</h3>
-                  <p className="text-gray-400 mb-4">
-                    This section of the admin dashboard is still being developed.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+  const navigation = [
+    { 
+      name: "Dashboard", 
+      href: "/admin", 
+      icon: BarChart2, 
+      description: "Overview & Analytics",
+      active: location.pathname === "/admin"
+    },
+    { 
+      name: "Members", 
+      href: "/admin/members", 
+      icon: Users, 
+      description: "Manage Members",
+      active: location.pathname === "/admin/members"
+    },
+    { 
+      name: "Classes", 
+      href: "/admin/classes", 
+      icon: Calendar, 
+      description: "Schedule & Bookings",
+      active: location.pathname === "/admin/classes"
+    },
+    { 
+      name: "Trainers", 
+      href: "/admin/trainers", 
+      icon: User, 
+      description: "Staff Management",
+      active: location.pathname === "/admin/trainers"
+    },
+    { 
+      name: "Payments", 
+      href: "/admin/payments", 
+      icon: DollarSign, 
+      description: "Financial Records",
+      active: location.pathname === "/admin/payments"
+    },
+    { 
+      name: "Plans", 
+      href: "/admin/membership-plans", 
+      icon: Edit, 
+      description: "Membership Plans",
+      active: location.pathname === "/admin/membership-plans"
+    },
+    { 
+      name: "Messages", 
+      href: "/admin/messages", 
+      icon: MessageSquare, 
+      description: "Communications",
+      active: location.pathname === "/admin/messages"
+    },
+    { 
+      name: "Reports", 
+      href: "/admin/reports", 
+      icon: FileText, 
+      description: "Analytics & Logs",
+      active: location.pathname === "/admin/reports"
+    },
+    { 
+      name: "Store", 
+      href: "/admin/store", 
+      icon: Store, 
+      description: "Product Management",
+      active: location.pathname === "/admin/store"
+    },
+    { 
+      name: "Settings", 
+      href: "/admin/settings", 
+      icon: Settings, 
+      description: "System Configuration",
+      active: location.pathname === "/admin/settings"
     }
-  };
+  ];
 
-  if (!user) {
+  if (!user || !hasRole('admin')) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
   }
 
-  return (
-    <div className="min-h-screen bg-fitness-black flex flex-col">
-      {/* Main Dashboard Content */}
-      <div className="flex flex-1">
-        {/* Sidebar Navigation */}
-        <aside className={`bg-fitness-darkGray border-r border-gray-800 transition-all duration-300 ${sidebarCollapsed ? 'w-[70px]' : 'w-64'}`}>
-          <div className="p-4 flex items-center justify-between border-b border-gray-800">
-            {!sidebarCollapsed && (
-              <h1 className="text-white font-bold text-xl">Admin Panel</h1>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar}
-              className="text-white"
-            >
-              {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
-            </Button>
-          </div>
-          
-          <div className={`flex items-center gap-3 p-4 mb-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <Avatar className="h-10 w-10 border border-fitness-red">
-              <AvatarImage src={userAvatar} alt={username} />
-              <AvatarFallback className="bg-fitness-red text-white">
-                {username.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            {!sidebarCollapsed && (
-              <div>
-                <p className="text-white font-medium">{username}</p>
-                <p className="text-xs text-gray-400">Administrator</p>
+  const renderDashboardContent = () => {
+    if (location.pathname !== "/admin") {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="mb-4">
+                <Settings className="h-16 w-16 text-fitness-red mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Feature Under Development
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                  This section of the admin dashboard is being built. Check back soon for new features and functionality.
+                </p>
               </div>
-            )}
-          </div>
-          
-          <nav className="p-2 space-y-1">
-            <Link to="/admin" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin") && location.pathname === "/admin"
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <BarChart2 className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Dashboard</span>}
-            </Link>
-            
-            <Link to="/admin/members" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/members") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Users className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Members</span>}
-            </Link>
-            
-            <Link to="/admin/classes" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/classes") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Calendar className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Classes</span>}
-            </Link>
-            
-            <Link to="/admin/trainers" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/trainers") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <User className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Trainers</span>}
-            </Link>
-            
-            <Link to="/admin/payments" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/payments") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <DollarSign className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Payments</span>}
-            </Link>
-            
-            <Link to="/admin/membership-plans" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/membership-plans") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Edit className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Membership Plans</span>}
-            </Link>
-            
-            <Link to="/admin/messages" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/messages") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <MessageSquare className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Messages</span>}
-            </Link>
-            
-            <Link to="/admin/reports" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/reports") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <FileText className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Reports</span>}
-            </Link>
-            
-            <Link to="/admin/store" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/store") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Store className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Store</span>}
-            </Link>
-            
-            <Link to="/admin/settings" 
-              className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${
-                isActive("/admin/settings") 
-                  ? "bg-fitness-red text-white" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}>
-              <Settings className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Settings</span>}
-            </Link>
-            
-            <Separator className="my-2 bg-gray-800" />
-            
-            <button 
-              onClick={handleLogout}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-gray-300 hover:bg-gray-800 hover:text-white ${sidebarCollapsed ? 'justify-center' : ''}`}>
-              <LogOut className="h-5 w-5" />
-              {!sidebarCollapsed && <span>Logout</span>}
-            </button>
-          </nav>
-        </aside>
+              <Button 
+                onClick={() => navigate('/admin')}
+                className="bg-fitness-red hover:bg-red-700"
+              >
+                Return to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 bg-fitness-black overflow-auto">
-          {/* Top Navigation Bar */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-white">
-              {location.pathname === "/admin" ? "Dashboard Overview" : 
-               location.pathname === "/admin/members" ? "Members Management" :
-               location.pathname === "/admin/classes" ? "Classes & Bookings" :
-               location.pathname === "/admin/trainers" ? "Trainers & Staff" :
-               location.pathname === "/admin/payments" ? "Payments & Subscriptions" :
-               location.pathname === "/admin/membership-plans" ? "Membership Plans" :
-               location.pathname === "/admin/messages" ? "Messages & Notifications" :
-               location.pathname === "/admin/reports" ? "Reports & Logs" :
-               location.pathname === "/admin/store" ? "Store Management" :
-               location.pathname === "/admin/settings" ? "Settings & Customization" :
-               "Admin Dashboard"}
-            </h1>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="text-white">
-                  <Bell className="h-5 w-5" />
-                  {notifications > 0 && (
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-fitness-red rounded-full">
-                      {notifications}
-                    </span>
-                  )}
-                </Button>
+    return (
+      <div className="space-y-8">
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">Total Members</p>
+                  <p className="text-3xl font-bold">
+                    {isStatsLoading ? <LoadingSpinner size={24} /> : stats?.totalMembers || 0}
+                  </p>
+                  <p className="text-blue-200 text-xs mt-1">
+                    {stats?.activeMembers || 0} active
+                  </p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-lg">
+                  <Users className="h-8 w-8" />
+                </div>
               </div>
-              <Link to="/" className="text-white hover:text-fitness-red">
-                Return to Site
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Today's Bookings</p>
+                  <p className="text-3xl font-bold">
+                    {isStatsLoading ? <LoadingSpinner size={24} /> : stats?.todayBookings || 0}
+                  </p>
+                  <p className="text-green-200 text-xs mt-1">Classes booked</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-lg">
+                  <Calendar className="h-8 w-8" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">Active Trainers</p>
+                  <p className="text-3xl font-bold">
+                    {isStatsLoading ? <LoadingSpinner size={24} /> : stats?.activeTrainers || 0}
+                  </p>
+                  <p className="text-purple-200 text-xs mt-1">Staff ready</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-lg">
+                  <Award className="h-8 w-8" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm font-medium">Monthly Revenue</p>
+                  <p className="text-3xl font-bold">
+                    {isStatsLoading ? <LoadingSpinner size={24} /> : `$${stats?.monthlyRevenue?.toFixed(2) || '0.00'}`}
+                  </p>
+                  <p className="text-orange-200 text-xs mt-1">This month</p>
+                </div>
+                <div className="bg-white/20 p-3 rounded-lg">
+                  <DollarSign className="h-8 w-8" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+              <Zap className="h-5 w-5 text-fitness-red" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Link to="/admin/members">
+                <Button className="w-full bg-fitness-red hover:bg-red-700 h-12">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Member
+                </Button>
+              </Link>
+              <Link to="/admin/classes">
+                <Button variant="outline" className="w-full h-12 border-gray-300 dark:border-gray-600">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Class
+                </Button>
+              </Link>
+              <Link to="/admin/trainers">
+                <Button variant="outline" className="w-full h-12 border-gray-300 dark:border-gray-600">
+                  <User className="h-4 w-4 mr-2" />
+                  Manage Staff
+                </Button>
+              </Link>
+              <Link to="/admin/reports">
+                <Button variant="outline" className="w-full h-12 border-gray-300 dark:border-gray-600">
+                  <BarChart2 className="h-4 w-4 mr-2" />
+                  View Reports
+                </Button>
               </Link>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                <Activity className="h-5 w-5 text-fitness-red" />
+                Recent Member Registrations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {stats?.recentMembers?.length ? (
+                stats.recentMembers.map((member, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-fitness-red text-white">
+                          {member.first_name?.charAt(0)}{member.last_name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {member.first_name} {member.last_name}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Joined {new Date(member.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      New
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No recent registrations
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                <Clock className="h-5 w-5 text-fitness-red" />
+                Recent Bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {stats?.recentBookings?.length ? (
+                stats.recentBookings.map((booking, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {booking.classes.name}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        by {booking.members.first_name} {booking.members.last_name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(booking.created_at).toLocaleDateString()}
+                      </p>
+                      <Badge variant="outline" className="border-fitness-red text-fitness-red">
+                        Booked
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No recent bookings
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-fitness-darkGray border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex flex-col h-full">
+          {/* Header with Logo */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <Link to="/" className="flex items-center gap-3">
+              <Dumbbell className="h-8 w-8 text-fitness-red" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-fitness-red">HUBERT</span> FITNESS
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Admin Panel</p>
+              </div>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden text-gray-500 dark:text-gray-400"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
-          {/* Render the appropriate content based on the current route */}
-          {renderContent()}
+          {/* User Profile Section */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full p-0 h-auto justify-start">
+                  <div className="flex items-center gap-3 w-full">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback className="bg-fitness-red text-white">
+                        {user?.name?.charAt(0) || 'A'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-left">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {user?.name || 'Admin'}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Administrator
+                      </p>
+                      <Badge className="bg-fitness-red/20 text-fitness-red border-0 text-xs mt-1">
+                        Admin Access
+                      </Badge>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Home</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                  item.active
+                    ? 'bg-fitness-red text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <item.icon className="h-5 w-5" />
+                <div className="flex-1">
+                  <div className="font-medium">{item.name}</div>
+                  <div className={`text-xs ${item.active ? 'text-red-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {item.description}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </nav>
+
+          {/* Theme Toggle */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Mobile header */}
+        <div className="lg:hidden bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-700 px-4 py-3 sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 dark:text-gray-400"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <h2 className="font-semibold text-gray-900 dark:text-white">
+              Admin Dashboard
+            </h2>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm">
+                <Bell className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Header for desktop */}
+        <div className="hidden lg:flex items-center justify-between p-6 bg-white dark:bg-fitness-darkGray border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {navigation.find(item => item.active)?.name || 'Dashboard'}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              {navigation.find(item => item.active)?.description || 'Welcome to your admin dashboard'}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search..."
+                className="pl-10 w-64 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+              />
+            </div>
+            <Button variant="ghost" size="sm">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Main content area */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
+          <div className="p-6 max-w-7xl mx-auto">
+            {renderDashboardContent()}
+          </div>
         </main>
       </div>
     </div>

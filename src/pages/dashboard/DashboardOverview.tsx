@@ -16,11 +16,14 @@ import {
   AlertCircle,
   Star,
   Trophy,
-  Zap
+  Zap,
+  Plus
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const DashboardOverview = () => {
   const { user } = useAuth();
@@ -63,6 +66,124 @@ const DashboardOverview = () => {
     fetchProfile();
   }, [user?.id]);
 
+  // Fetch real upcoming classes data
+  const { data: upcomingClasses, isLoading: isClassesLoading } = useQuery({
+    queryKey: ['upcoming-classes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get member data first
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!memberData) return [];
+
+      // Get upcoming bookings with class and trainer details
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          created_at,
+          class_schedules!inner(
+            start_time,
+            end_time,
+            classes!inner(
+              name,
+              description,
+              trainers(first_name, last_name)
+            )
+          )
+        `)
+        .eq('member_id', memberData.id)
+        .eq('status', 'confirmed')
+        .gte('class_schedules.start_time', new Date().toISOString())
+        .order('class_schedules.start_time', { ascending: true })
+        .limit(3);
+
+      return bookings || [];
+    },
+    enabled: !!user?.id,
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Fetch real nutrition data
+  const { data: todaysMeals, isLoading: isMealsLoading } = useQuery({
+    queryKey: ['todays-meals', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: meals } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('time', { ascending: true });
+
+      return meals || [];
+    },
+    enabled: !!user?.id,
+    refetchInterval: 300000, // Refresh every 5 minutes
+  });
+
+  // Fetch dashboard stats
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['dashboard-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      // Get member data
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('id, created_at')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!memberData) return null;
+
+      // Get this week's bookings
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const { count: weeklyClasses } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('member_id', memberData.id)
+        .gte('created_at', startOfWeek.toISOString());
+
+      // Get today's calories
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayMeals } = await supabase
+        .from('meals')
+        .select('calories')
+        .eq('user_id', user.id)
+        .eq('date', today);
+
+      const todayCalories = todayMeals?.reduce((sum, meal) => sum + meal.calories, 0) || 0;
+
+      // Calculate streak (simplified - count recent days with bookings)
+      const { count: recentBookings } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('member_id', memberData.id)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      return {
+        weeklyClasses: weeklyClasses || 0,
+        todayCalories,
+        workoutStreak: Math.min(recentBookings || 0, 7),
+        memberSince: memberData.created_at
+      };
+    },
+    enabled: !!user?.id,
+    refetchInterval: 300000,
+  });
+
   const getDisplayName = () => {
     if (profile?.first_name && profile?.last_name) {
       return `${profile.first_name} ${profile.last_name}`;
@@ -88,58 +209,66 @@ const DashboardOverview = () => {
     return 'evening';
   };
 
-  // Mock data for demonstration
-  const upcomingClasses = [
-    {
-      id: 1,
-      name: "HIIT Training",
-      instructor: "Michael Thompson",
-      time: "6:30 PM",
-      date: "Today"
-    },
-    {
-      id: 2,
-      name: "Yoga Flow",
-      instructor: "Sarah Wilson",
-      time: "9:00 AM",
-      date: "Tomorrow"
+  const formatClassTime = (startTime: string, endTime: string) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return `${start.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    })} - ${end.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    })}`;
+  };
+
+  const formatClassDate = (startTime: string) => {
+    const date = new Date(startTime);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
     }
-  ];
+  };
 
-  const todaysMeals = [
-    { type: "Breakfast", calories: 350, completed: true },
-    { type: "Lunch", calories: 520, completed: true },
-    { type: "Dinner", calories: 480, completed: false },
-    { type: "Snack", calories: 150, completed: false }
-  ];
-
-  const stats = [
+  const statsCards = [
     {
       title: "Classes This Week",
-      value: "4",
+      value: isStatsLoading ? <LoadingSpinner size={20} /> : (stats?.weeklyClasses || 0).toString(),
       icon: Users,
-      trend: "+2 from last week",
+      trend: `${stats?.weeklyClasses || 0} booked`,
       color: "text-green-500"
     },
     {
       title: "Calories Today",
-      value: "870",
+      value: isStatsLoading ? <LoadingSpinner size={20} /> : (stats?.todayCalories || 0).toString(),
       icon: Apple,
-      trend: "Target: 1,500",
+      trend: "Target: 2,000",
       color: "text-blue-500"
     },
     {
       title: "Workout Streak",
-      value: "7 days",
+      value: isStatsLoading ? <LoadingSpinner size={20} /> : `${stats?.workoutStreak || 0} days`,
       icon: Activity,
-      trend: "Personal best!",
+      trend: stats?.workoutStreak && stats.workoutStreak > 0 ? "Keep it up!" : "Start today!",
       color: "text-purple-500"
     },
     {
-      title: "Goals Completed",
-      value: "3/5",
+      title: "Member Since",
+      value: isStatsLoading ? <LoadingSpinner size={20} /> : stats?.memberSince ? 
+        new Date(stats.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'New',
       icon: Target,
-      trend: "60% complete",
+      trend: "Active member",
       color: "text-orange-500"
     }
   ];
@@ -179,10 +308,12 @@ const DashboardOverview = () => {
                   <Trophy className="h-3 w-3 mr-1" />
                   Active Member
                 </Badge>
-                <Badge className="bg-yellow-400/20 text-yellow-100 border-yellow-300/30">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  7-Day Streak
-                </Badge>
+                {stats?.workoutStreak && stats.workoutStreak > 0 && (
+                  <Badge className="bg-yellow-400/20 text-yellow-100 border-yellow-300/30">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    {stats.workoutStreak}-Day Streak
+                  </Badge>
+                )}
                 {profile?.fitness_goals && (
                   <Badge className="bg-green-400/20 text-green-100 border-green-300/30">
                     <Target className="h-3 w-3 mr-1" />
@@ -197,9 +328,16 @@ const DashboardOverview = () => {
                 <p className="text-white/80 text-sm">Today's Progress</p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="w-3/4 h-full bg-yellow-400 rounded-full"></div>
+                    <div 
+                      className="h-full bg-yellow-400 rounded-full transition-all duration-500" 
+                      style={{ 
+                        width: `${Math.min((stats?.todayCalories || 0) / 2000 * 100, 100)}%` 
+                      }}
+                    ></div>
                   </div>
-                  <span className="text-sm font-medium">75%</span>
+                  <span className="text-sm font-medium">
+                    {Math.round(Math.min((stats?.todayCalories || 0) / 2000 * 100, 100))}%
+                  </span>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -222,7 +360,7 @@ const DashboardOverview = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsCards.map((stat, index) => (
           <Card key={index} className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -241,7 +379,7 @@ const DashboardOverview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Classes */}
+        {/* Real Upcoming Classes */}
         <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
@@ -253,27 +391,56 @@ const DashboardOverview = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingClasses.map((classItem) => (
-              <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div>
-                  <h3 className="text-gray-900 dark:text-white font-semibold">{classItem.name}</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{classItem.instructor}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-gray-900 dark:text-white font-medium">{classItem.time}</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{classItem.date}</p>
-                </div>
+            {isClassesLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size={32} />
               </div>
-            ))}
-            <Link to="/dashboard/classes">
-              <Button className="w-full bg-fitness-red hover:bg-red-700">
-                View All Classes
-              </Button>
-            </Link>
+            ) : upcomingClasses && upcomingClasses.length > 0 ? (
+              upcomingClasses.map((booking) => (
+                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div>
+                    <h3 className="text-gray-900 dark:text-white font-semibold">
+                      {booking.class_schedules.classes.name}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      {booking.class_schedules.classes.trainers?.first_name} {booking.class_schedules.classes.trainers?.last_name}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-900 dark:text-white font-medium">
+                      {formatClassTime(booking.class_schedules.start_time, booking.class_schedules.end_time)}
+                    </p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      {formatClassDate(booking.class_schedules.start_time)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  You don't have any classes scheduled.
+                </p>
+                <Link to="/schedule">
+                  <Button className="bg-fitness-red hover:bg-red-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Book a Class
+                  </Button>
+                </Link>
+              </div>
+            )}
+            {upcomingClasses && upcomingClasses.length > 0 && (
+              <Link to="/dashboard/classes">
+                <Button className="w-full bg-fitness-red hover:bg-red-700">
+                  View All Classes
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
 
-        {/* Today's Nutrition */}
+        {/* Real Today's Nutrition */}
         <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
@@ -285,30 +452,51 @@ const DashboardOverview = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todaysMeals.map((meal, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  {meal.completed ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-gray-400" />
-                  )}
-                  <div>
-                    <h3 className="text-gray-900 dark:text-white font-semibold">{meal.type}</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{meal.calories} calories</p>
-                  </div>
-                </div>
-                <Badge 
-                  variant="outline" 
-                  className={meal.completed ? "border-green-500 text-green-500" : "border-gray-400 dark:border-gray-600 text-gray-600 dark:text-gray-400"}
-                >
-                  {meal.completed ? "Complete" : "Pending"}
-                </Badge>
+            {isMealsLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size={32} />
               </div>
-            ))}
+            ) : todaysMeals && todaysMeals.length > 0 ? (
+              todaysMeals.map((meal, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div>
+                      <h3 className="text-gray-900 dark:text-white font-semibold">{meal.name}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        {meal.meal_type} • {meal.calories} calories
+                      </p>
+                      <p className="text-gray-500 dark:text-gray-500 text-xs">
+                        {new Date(`2000-01-01T${meal.time}`).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className="border-green-500 text-green-500">
+                    Logged
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Apple className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  No meals logged today. Start tracking your nutrition!
+                </p>
+                <Link to="/dashboard/nutrition">
+                  <Button className="bg-fitness-red hover:bg-red-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Log Your First Meal
+                  </Button>
+                </Link>
+              </div>
+            )}
             <Link to="/dashboard/nutrition">
               <Button className="w-full bg-fitness-red hover:bg-red-700">
-                View Nutrition Plan
+                {todaysMeals && todaysMeals.length > 0 ? 'View Nutrition Plan' : 'Set Up Nutrition'}
               </Button>
             </Link>
           </CardContent>

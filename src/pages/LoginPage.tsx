@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, Dumbbell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -94,6 +94,17 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-fitness-dark via-fitness-darkGray to-fitness-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Logo and Brand Header */}
+        <div className="text-center mb-8 animate-in fade-in duration-1000">
+          <Link to="/" className="flex items-center justify-center gap-3 mb-4">
+            <Dumbbell className="h-10 w-10 text-fitness-red" />
+            <h1 className="text-3xl font-bold text-white">
+              <span className="text-fitness-red">HUBERT</span> FITNESS
+            </h1>
+          </Link>
+          <p className="text-gray-400">Your Fitness Journey Starts Here</p>
+        </div>
+
         <Card className="bg-fitness-darkGray/90 border-gray-800 backdrop-blur-sm shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
           <CardHeader className="space-y-4 text-center">
             <div className="animate-in zoom-in-50 duration-1000 delay-300">
