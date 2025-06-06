@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -116,15 +115,55 @@ const AdminDashboardPage = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      const { data: recentBookings } = await supabase
+      // Fixed query for recent bookings - using separate queries to avoid relationship issues
+      const { data: recentBookingsData } = await supabase
         .from('bookings')
-        .select(`
-          created_at,
-          members!inner(first_name, last_name),
-          classes!inner(name)
-        `)
+        .select('created_at, member_id, class_schedule_id')
         .order('created_at', { ascending: false })
         .limit(5);
+
+      let recentBookings = [];
+      if (recentBookingsData && recentBookingsData.length > 0) {
+        // Get member and class details separately
+        const memberIds = recentBookingsData.map(b => b.member_id).filter(Boolean);
+        const scheduleIds = recentBookingsData.map(b => b.class_schedule_id).filter(Boolean);
+
+        const [membersData, schedulesData] = await Promise.all([
+          memberIds.length > 0 ? supabase
+            .from('members')
+            .select('id, first_name, last_name')
+            .in('id', memberIds) : Promise.resolve({ data: [] }),
+          scheduleIds.length > 0 ? supabase
+            .from('class_schedules')
+            .select('id, class_id')
+            .in('id', scheduleIds) : Promise.resolve({ data: [] })
+        ]);
+
+        // Get class details if we have schedules
+        let classesData = { data: [] };
+        if (schedulesData.data && schedulesData.data.length > 0) {
+          const classIds = schedulesData.data.map(s => s.class_id).filter(Boolean);
+          if (classIds.length > 0) {
+            classesData = await supabase
+              .from('classes')
+              .select('id, name')
+              .in('id', classIds);
+          }
+        }
+
+        // Combine the data
+        recentBookings = recentBookingsData.map(booking => {
+          const member = membersData.data?.find(m => m.id === booking.member_id);
+          const schedule = schedulesData.data?.find(s => s.id === booking.class_schedule_id);
+          const classInfo = schedule ? classesData.data?.find(c => c.id === schedule.class_id) : null;
+
+          return {
+            created_at: booking.created_at,
+            members: member || { first_name: 'Unknown', last_name: 'Member' },
+            classes: classInfo || { name: 'Unknown Class' }
+          };
+        });
+      }
 
       return {
         totalMembers: totalMembers || 0,
