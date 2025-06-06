@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,29 +80,61 @@ const DashboardOverview = () => {
 
       if (!memberData) return [];
 
-      // Get upcoming bookings with class and trainer details
-      const { data: bookings } = await supabase
+      // Get upcoming bookings
+      const { data: bookingsData } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          created_at,
-          class_schedules!inner(
-            start_time,
-            end_time,
-            classes!inner(
-              name,
-              description,
-              trainers(first_name, last_name)
-            )
-          )
-        `)
+        .select('id, created_at, class_schedule_id')
         .eq('member_id', memberData.id)
         .eq('status', 'confirmed')
-        .gte('class_schedules.start_time', new Date().toISOString())
-        .order('class_schedules.start_time', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(3);
 
-      return bookings || [];
+      if (!bookingsData || bookingsData.length === 0) return [];
+
+      // Get class schedules for the bookings
+      const scheduleIds = bookingsData.map(b => b.class_schedule_id).filter(Boolean);
+      if (scheduleIds.length === 0) return [];
+
+      const { data: schedulesData } = await supabase
+        .from('class_schedules')
+        .select('id, start_time, end_time, class_id')
+        .in('id', scheduleIds)
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true });
+
+      if (!schedulesData || schedulesData.length === 0) return [];
+
+      // Get class details
+      const classIds = schedulesData.map(s => s.class_id).filter(Boolean);
+      const [classesData, trainersData] = await Promise.all([
+        supabase
+          .from('classes')
+          .select('id, name, description, trainer_id')
+          .in('id', classIds),
+        supabase
+          .from('trainers')
+          .select('id, first_name, last_name')
+      ]);
+
+      // Combine the data
+      return schedulesData.map(schedule => {
+        const classInfo = classesData.data?.find(c => c.id === schedule.class_id);
+        const trainer = trainersData.data?.find(t => t.id === classInfo?.trainer_id);
+
+        return {
+          id: schedule.id,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          class: {
+            name: classInfo?.name || 'Unknown Class',
+            description: classInfo?.description || ''
+          },
+          trainer: trainer ? {
+            first_name: trainer.first_name,
+            last_name: trainer.last_name
+          } : null
+        };
+      });
     },
     enabled: !!user?.id,
     refetchInterval: 60000, // Refresh every minute
@@ -396,22 +427,22 @@ const DashboardOverview = () => {
                 <LoadingSpinner size={32} />
               </div>
             ) : upcomingClasses && upcomingClasses.length > 0 ? (
-              upcomingClasses.map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              upcomingClasses.map((classItem) => (
+                <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
                     <h3 className="text-gray-900 dark:text-white font-semibold">
-                      {booking.class_schedules.classes.name}
+                      {classItem.class.name}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {booking.class_schedules.classes.trainers?.first_name} {booking.class_schedules.classes.trainers?.last_name}
+                      {classItem.trainer ? `${classItem.trainer.first_name} ${classItem.trainer.last_name}` : 'Instructor TBA'}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-gray-900 dark:text-white font-medium">
-                      {formatClassTime(booking.class_schedules.start_time, booking.class_schedules.end_time)}
+                      {formatClassTime(classItem.start_time, classItem.end_time)}
                     </p>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {formatClassDate(booking.class_schedules.start_time)}
+                      {formatClassDate(classItem.start_time)}
                     </p>
                   </div>
                 </div>
@@ -420,7 +451,7 @@ const DashboardOverview = () => {
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  You don't have any classes scheduled.
+                  No upcoming classes. Book one now to stay on track!
                 </p>
                 <Link to="/schedule">
                   <Button className="bg-fitness-red hover:bg-red-700">
