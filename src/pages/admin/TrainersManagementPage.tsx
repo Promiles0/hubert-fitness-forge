@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import AddTrainerDialog from "@/components/admin/AddTrainerDialog";
 import {
   Table,
   TableBody,
@@ -32,6 +33,7 @@ import {
 
 const TrainersManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch trainers with their classes and member assignments
@@ -107,7 +109,10 @@ const TrainersManagementPage = () => {
             Manage trainer profiles and assignments
           </p>
         </div>
-        <Button className="bg-fitness-red hover:bg-red-700">
+        <Button 
+          className="bg-fitness-red hover:bg-red-700"
+          onClick={() => setShowAddDialog(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Trainer
         </Button>
@@ -274,6 +279,11 @@ const TrainersManagementPage = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AddTrainerDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog} 
+      />
     </div>
   );
 };

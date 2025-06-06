@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import AddClassDialog from "@/components/admin/AddClassDialog";
 import {
   Table,
   TableBody,
@@ -29,6 +30,7 @@ import {
 
 const ClassesManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch classes with schedules and trainers
@@ -97,7 +99,7 @@ const ClassesManagementPage = () => {
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString('en-US', {
+    return new Date(`1970-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -122,7 +124,10 @@ const ClassesManagementPage = () => {
             Manage fitness classes and schedules
           </p>
         </div>
-        <Button className="bg-fitness-red hover:bg-red-700">
+        <Button 
+          className="bg-fitness-red hover:bg-red-700"
+          onClick={() => setShowAddDialog(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Class
         </Button>
@@ -274,6 +279,11 @@ const ClassesManagementPage = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AddClassDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog} 
+      />
     </div>
   );
 };

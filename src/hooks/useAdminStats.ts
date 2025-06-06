@@ -52,55 +52,37 @@ export const useAdminStats = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      // Fixed query for recent bookings - using separate queries to avoid relationship issues
+      // Get recent bookings with member and class info
       const { data: recentBookingsData } = await supabase
         .from('bookings')
-        .select('created_at, member_id, class_schedule_id')
+        .select(`
+          created_at,
+          members!inner(first_name, last_name),
+          class_schedules!inner(
+            classes!inner(name)
+          )
+        `)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      let recentBookings = [];
-      if (recentBookingsData && recentBookingsData.length > 0) {
-        // Get member and class details separately
-        const memberIds = recentBookingsData.map(b => b.member_id).filter(Boolean);
-        const scheduleIds = recentBookingsData.map(b => b.class_schedule_id).filter(Boolean);
-
-        const [membersData, schedulesData] = await Promise.all([
-          memberIds.length > 0 ? supabase
-            .from('members')
-            .select('id, first_name, last_name')
-            .in('id', memberIds) : Promise.resolve({ data: [] }),
-          scheduleIds.length > 0 ? supabase
-            .from('class_schedules')
-            .select('id, class_id')
-            .in('id', scheduleIds) : Promise.resolve({ data: [] })
-        ]);
-
-        // Get class details if we have schedules
-        let classesData = { data: [] };
-        if (schedulesData.data && schedulesData.data.length > 0) {
-          const classIds = schedulesData.data.map(s => s.class_id).filter(Boolean);
-          if (classIds.length > 0) {
-            classesData = await supabase
-              .from('classes')
-              .select('id, name')
-              .in('id', classIds);
-          }
+      // Transform the booking data to match expected format
+      const recentBookings = recentBookingsData?.map(booking => ({
+        created_at: booking.created_at,
+        members: {
+          first_name: booking.members?.first_name || 'Unknown',
+          last_name: booking.members?.last_name || 'Member'
+        },
+        classes: {
+          name: booking.class_schedules?.classes?.name || 'Unknown Class'
         }
+      })) || [];
 
-        // Combine the data
-        recentBookings = recentBookingsData.map(booking => {
-          const member = membersData.data?.find(m => m.id === booking.member_id);
-          const schedule = schedulesData.data?.find(s => s.id === booking.class_schedule_id);
-          const classInfo = schedule ? classesData.data?.find(c => c.id === schedule.class_id) : null;
-
-          return {
-            created_at: booking.created_at,
-            members: member || { first_name: 'Unknown', last_name: 'Member' },
-            classes: classInfo || { name: 'Unknown Class' }
-          };
-        });
-      }
+      // Get recent messages
+      const { data: recentMessages } = await supabase
+        .from('messages')
+        .select('subject, content, created_at, message_type')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
       return {
         totalMembers: totalMembers || 0,
@@ -110,7 +92,8 @@ export const useAdminStats = () => {
         activeTrainers: activeTrainers || 0,
         monthlyRevenue,
         recentMembers: recentMembers || [],
-        recentBookings: recentBookings || []
+        recentBookings: recentBookings || [],
+        recentMessages: recentMessages || []
       };
     },
     refetchInterval: 30000,

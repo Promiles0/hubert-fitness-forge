@@ -20,6 +20,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import AddPlanDialog from "@/components/admin/AddPlanDialog";
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ import {
 
 const PlansManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch membership plans with member counts
@@ -120,7 +122,10 @@ const PlansManagementPage = () => {
             Manage subscription plans and pricing
           </p>
         </div>
-        <Button className="bg-fitness-red hover:bg-red-700">
+        <Button 
+          className="bg-fitness-red hover:bg-red-700"
+          onClick={() => setShowAddDialog(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Plan
         </Button>
@@ -295,6 +300,11 @@ const PlansManagementPage = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AddPlanDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog} 
+      />
     </div>
   );
 };
