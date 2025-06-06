@@ -13,9 +13,8 @@ import {
   Package,
   DollarSign,
   ShoppingCart,
-  TrendingUp,
-  AlertTriangle,
-  Eye,
+  TrendingDown,
+  Filter,
   Star
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,12 +55,13 @@ const StoreManagementPage = () => {
         query = query.ilike('name', `%${searchTerm}%`);
       }
 
-      if (categoryFilter !== 'all') {
+      if (categoryFilter !== "all") {
         query = query.eq('category', categoryFilter);
       }
 
-      if (statusFilter !== 'all') {
-        query = query.eq('is_active', statusFilter === 'active');
+      if (statusFilter !== "all") {
+        const isActive = statusFilter === "active";
+        query = query.eq('is_active', isActive);
       }
 
       const { data, error } = await query;
@@ -70,22 +70,20 @@ const StoreManagementPage = () => {
     },
   });
 
-  // Fetch sales data
-  const { data: salesData } = useQuery({
-    queryKey: ['admin-sales-data'],
+  // Fetch orders for sales data
+  const { data: orders } = useQuery({
+    queryKey: ['admin-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('order_items')
+        .from('orders')
         .select(`
           *,
-          orders (
-            status,
-            total_amount,
-            created_at
-          ),
-          products (
-            name,
-            price
+          order_items (
+            quantity,
+            price_per_unit,
+            products (
+              name
+            )
           )
         `);
 
@@ -94,57 +92,27 @@ const StoreManagementPage = () => {
     },
   });
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-      if (error) throw error;
-
-      toast.success('Product deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-    } catch (error: any) {
-      toast.error(error.message);
-    }
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
-  const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: !currentStatus })
-        .eq('id', productId);
-
-      if (error) throw error;
-
-      toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-    } catch (error: any) {
-      toast.error(error.message);
-    }
+  const getStockColor = (stock: number) => {
+    if (stock === 0) return 'bg-red-100 text-red-800';
+    if (stock < 10) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-green-100 text-green-800';
   };
 
   // Calculate stats
-  const stats = products && salesData ? {
+  const stats = products ? {
     totalProducts: products.length,
     activeProducts: products.filter(p => p.is_active).length,
-    lowStockProducts: products.filter(p => p.stock_quantity < 10).length,
-    totalSales: salesData.reduce((sum, item) => sum + (Number(item.price_per_unit) * item.quantity), 0),
-    totalOrders: [...new Set(salesData.map(item => item.order_id))].length,
-  } : {
-    totalProducts: 0,
-    activeProducts: 0,
-    lowStockProducts: 0,
-    totalSales: 0,
-    totalOrders: 0,
-  };
+    lowStock: products.filter(p => p.stock_quantity < 10).length,
+    totalValue: products.reduce((sum, p) => sum + (Number(p.price) * p.stock_quantity), 0),
+  } : { totalProducts: 0, activeProducts: 0, lowStock: 0, totalValue: 0 };
 
   // Get unique categories
-  const categories = [...new Set(products?.map(p => p.category).filter(Boolean))] || [];
+  const categories = products ? 
+    [...new Set(products.map(p => p.category).filter(Boolean))] : [];
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -155,25 +123,19 @@ const StoreManagementPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Store Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Store</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage gym merchandise and product sales
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            POS
-          </Button>
-          <Button className="bg-fitness-red hover:bg-red-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button>
-        </div>
+        <Button className="bg-fitness-red hover:bg-red-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Product
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -187,7 +149,6 @@ const StoreManagementPage = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -195,57 +156,41 @@ const StoreManagementPage = () => {
                 <div className="text-2xl font-bold text-green-600">
                   {stats.activeProducts}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Products</p>
               </div>
-              <Eye className="h-8 w-8 text-green-600" />
+              <ShoppingCart className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-red-600">
-                  {stats.lowStockProducts}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Low Stock</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-purple-600">
-                  ${stats.totalSales.toFixed(2)}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Sales</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-orange-600">
-                  {stats.totalOrders}
+                  {stats.lowStock}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Orders</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Low Stock</p>
               </div>
-              <ShoppingCart className="h-8 w-8 text-orange-600" />
+              <TrendingDown className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-600">
+                  ${stats.totalValue.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Inventory Value</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
@@ -259,19 +204,21 @@ const StoreManagementPage = () => {
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by category" />
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -297,92 +244,65 @@ const StoreManagementPage = () => {
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Sales</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products?.map((product) => {
-                const productSales = salesData?.filter(sale => sale.product_id === product.id) || [];
-                const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
-                const revenue = productSales.reduce((sum, sale) => sum + (Number(sale.price_per_unit) * sale.quantity), 0);
-
-                return (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                          {product.image_url ? (
-                            <img 
-                              src={product.image_url} 
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-gray-400" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-gray-500">{product.description}</div>
-                        </div>
+              {products?.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                        <Package className="h-6 w-6 text-gray-400" />
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {product.category || 'Uncategorized'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="font-medium">${Number(product.price).toFixed(2)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className={`flex items-center gap-2 ${product.stock_quantity < 10 ? 'text-red-600' : ''}`}>
-                        <Package className="h-4 w-4" />
-                        <span className="font-medium">{product.stock_quantity}</span>
-                        {product.stock_quantity < 10 && (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       <div>
-                        <div className="font-medium">{totalSold} sold</div>
-                        <div className="text-sm text-gray-500">${revenue.toFixed(2)} revenue</div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {product.description ? 
+                            (product.description.length > 50 ? 
+                              `${product.description.substring(0, 50)}...` : 
+                              product.description) : 
+                            'No description'
+                          }
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => toggleProductStatus(product.id, product.is_active)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {product.category || 'Uncategorized'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-green-600">
+                      ${Number(product.price).toFixed(2)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStockColor(product.stock_quantity)}>
+                      {product.stock_quantity} units
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(product.is_active)}>
+                      {product.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Star className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>

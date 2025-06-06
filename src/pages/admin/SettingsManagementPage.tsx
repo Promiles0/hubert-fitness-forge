@@ -34,6 +34,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+type UserRole = 'admin' | 'member' | 'trainer' | 'staff';
+
 const SettingsManagementPage = () => {
   const [businessName, setBusinessName] = useState("HUBERT FITNESS");
   const [businessEmail, setBusinessEmail] = useState("admin@hubertfitness.com");
@@ -54,12 +56,7 @@ const SettingsManagementPage = () => {
       const { data, error } = await supabase
         .from('user_roles')
         .select(`
-          *,
-          profiles (
-            name,
-            first_name,
-            last_name
-          )
+          *
         `)
         .order('created_at', { ascending: false });
 
@@ -83,7 +80,7 @@ const SettingsManagementPage = () => {
     toast.success('System settings saved successfully');
   };
 
-  const handleChangeUserRole = async (userId: string, newRole: string) => {
+  const handleChangeUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const { error } = await supabase
         .from('user_roles')
@@ -102,8 +99,8 @@ const SettingsManagementPage = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800';
-      case 'manager': return 'bg-blue-100 text-blue-800';
-      case 'trainer': return 'bg-green-100 text-green-800';
+      case 'trainer': return 'bg-blue-100 text-blue-800';
+      case 'staff': return 'bg-green-100 text-green-800';
       case 'member': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -239,10 +236,7 @@ const SettingsManagementPage = () => {
                     <div className="flex items-center gap-3">
                       <div>
                         <div className="font-medium">
-                          {userRole.profiles?.first_name && userRole.profiles?.last_name
-                            ? `${userRole.profiles.first_name} ${userRole.profiles.last_name}`
-                            : userRole.profiles?.name || 'Unknown User'
-                          }
+                          User {userRole.user_id.slice(0, 8)}
                         </div>
                         <div className="text-sm text-gray-500">User ID: {userRole.user_id}</div>
                       </div>
@@ -253,7 +247,7 @@ const SettingsManagementPage = () => {
                       </Badge>
                       <Select 
                         value={userRole.role} 
-                        onValueChange={(newRole) => handleChangeUserRole(userRole.user_id, newRole)}
+                        onValueChange={(newRole: UserRole) => handleChangeUserRole(userRole.user_id, newRole)}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue />
@@ -261,7 +255,7 @@ const SettingsManagementPage = () => {
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
                           <SelectItem value="trainer">Trainer</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>

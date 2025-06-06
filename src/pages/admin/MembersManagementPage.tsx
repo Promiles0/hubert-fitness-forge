@@ -1,22 +1,23 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Mail, 
-  Phone, 
-  Download,
+  Search,
+  Plus,
   Filter,
-  Calendar,
-  UserX
+  Download,
+  Mail,
+  Pause,
+  Clock,
+  Users,
+  CreditCard,
+  AlertTriangle,
+  Edit
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,12 +38,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type MemberStatus = 'active' | 'suspended' | 'expired' | 'pending';
+
 const MembersManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
   const queryClient = useQueryClient();
 
-  // Fetch members with their membership plans
+  // Fetch members with membership plans
   const { data: members, isLoading } = useQuery({
     queryKey: ['admin-members', searchTerm, statusFilter],
     queryFn: async () => {
@@ -61,7 +64,7 @@ const MembersManagementPage = () => {
         query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      if (statusFilter !== 'all') {
+      if (statusFilter !== "all") {
         query = query.eq('status', statusFilter);
       }
 
@@ -74,54 +77,20 @@ const MembersManagementPage = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
-      case 'expired': return 'bg-red-100 text-red-800';
+      case 'suspended': return 'bg-red-100 text-red-800';
+      case 'expired': return 'bg-orange-100 text-orange-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'suspended': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleDeleteMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to delete this member?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', memberId);
-
-      if (error) throw error;
-
-      toast.success('Member deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const exportToCSV = () => {
-    if (!members) return;
-    
-    const csv = [
-      ['Name', 'Email', 'Phone', 'Status', 'Join Date', 'Plan'],
-      ...members.map(member => [
-        `${member.first_name} ${member.last_name}`,
-        member.email,
-        member.phone || '',
-        member.status,
-        new Date(member.join_date).toLocaleDateString(),
-        member.membership_plans?.name || 'No Plan'
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'members.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  // Calculate stats
+  const stats = members ? {
+    total: members.length,
+    active: members.filter(m => m.status === 'active').length,
+    expired: members.filter(m => m.status === 'expired').length,
+    revenue: members.reduce((sum, m) => sum + (m.membership_plans?.price || 0), 0),
+  } : { total: 0, active: 0, expired: 0, revenue: 0 };
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -138,9 +107,9 @@ const MembersManagementPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={exportToCSV} variant="outline">
+          <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            Export
           </Button>
           <Button className="bg-fitness-red hover:bg-red-700">
             <Plus className="h-4 w-4 mr-2" />
@@ -153,39 +122,59 @@ const MembersManagementPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-green-600">
-              {members?.filter(m => m.status === 'active').length || 0}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.total}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Members</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Active Members</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-red-600">
-              {members?.filter(m => m.status === 'expired').length || 0}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.active}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Members</p>
+              </div>
+              <Users className="h-8 w-8 text-green-600" />
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Expired</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-yellow-600">
-              {members?.filter(m => m.status === 'pending').length || 0}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats.expired}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Expired</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-orange-600" />
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-gray-600">
-              {members?.length || 0}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-purple-600">
+                  ${stats.revenue.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
+              </div>
+              <CreditCard className="h-8 w-8 text-purple-600" />
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Members</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
@@ -198,17 +187,16 @@ const MembersManagementPage = () => {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as MemberStatus | "all")}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,9 +214,10 @@ const MembersManagementPage = () => {
               <TableRow>
                 <TableHead>Member</TableHead>
                 <TableHead>Contact</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Join Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expiry Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -237,32 +226,37 @@ const MembersManagementPage = () => {
                 <TableRow key={member.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar>
+                      <Avatar className="h-10 w-10">
                         <AvatarFallback>
-                          {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                          {member.first_name?.charAt(0)}{member.last_name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
                           {member.first_name} {member.last_name}
                         </div>
-                        <div className="text-sm text-gray-500">{member.email}</div>
+                        <div className="text-sm text-gray-500">ID: {member.id.slice(0, 8)}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-3 w-3" />
-                        {member.email}
-                      </div>
-                      {member.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-3 w-3" />
-                          {member.phone}
-                        </div>
-                      )}
+                    <div>
+                      <div className="font-medium">{member.email}</div>
+                      <div className="text-sm text-gray-500">{member.phone || 'No phone'}</div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">
+                        {member.membership_plans?.name || 'No Plan'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ${member.membership_plans?.price || 0}/month
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(member.join_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(member.status)}>
@@ -270,13 +264,7 @@ const MembersManagementPage = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {member.membership_plans?.name || 'No Plan'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(member.join_date).toLocaleDateString()}
-                    </div>
+                    {member.expiry_date ? new Date(member.expiry_date).toLocaleDateString() : 'N/A'}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -287,14 +275,10 @@ const MembersManagementPage = () => {
                         <Mail className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm">
-                        <UserX className="h-4 w-4" />
+                        <Pause className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteMember(member.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="ghost" size="sm">
+                        <Clock className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

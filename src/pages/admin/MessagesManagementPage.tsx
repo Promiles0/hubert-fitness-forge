@@ -30,13 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MessagesManagementPage = () => {
@@ -44,24 +37,14 @@ const MessagesManagementPage = () => {
   const [activeTab, setActiveTab] = useState("inbox");
   const queryClient = useQueryClient();
 
-  // Fetch messages
+  // Fetch messages with profiles
   const { data: messages, isLoading } = useQuery({
     queryKey: ['admin-messages', searchTerm, activeTab],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('messages')
         .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey (
-            name,
-            first_name,
-            last_name
-          ),
-          recipient:profiles!messages_recipient_id_fkey (
-            name,
-            first_name,
-            last_name
-          )
+          *
         `)
         .order('created_at', { ascending: false });
 
@@ -70,26 +53,11 @@ const MessagesManagementPage = () => {
     },
   });
 
-  // Fetch members for bulk messaging
-  const { data: members } = useQuery({
-    queryKey: ['admin-members-for-messaging'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('members')
-        .select('id, first_name, last_name, email')
-        .eq('status', 'active');
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const getMessageTypeColor = (type: string) => {
     switch (type) {
-      case 'announcement': return 'bg-blue-100 text-blue-800';
-      case 'reminder': return 'bg-yellow-100 text-yellow-800';
-      case 'personal': return 'bg-green-100 text-green-800';
-      case 'promotional': return 'bg-purple-100 text-purple-800';
+      case 'admin': return 'bg-blue-100 text-blue-800';
+      case 'customer': return 'bg-yellow-100 text-yellow-800';
+      case 'system': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -106,9 +74,9 @@ const MessagesManagementPage = () => {
   const stats = messages ? {
     total: messages.length,
     unread: messages.filter(m => !m.is_read).length,
-    announcements: messages.filter(m => m.message_type === 'announcement').length,
-    personal: messages.filter(m => m.message_type === 'personal').length,
-  } : { total: 0, unread: 0, announcements: 0, personal: 0 };
+    admin: messages.filter(m => m.message_type === 'admin').length,
+    customer: messages.filter(m => m.message_type === 'customer').length,
+  } : { total: 0, unread: 0, admin: 0, customer: 0 };
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -169,9 +137,9 @@ const MessagesManagementPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {stats.announcements}
+                  {stats.admin}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Announcements</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Admin Messages</p>
               </div>
               <Send className="h-8 w-8 text-purple-600" />
             </div>
@@ -182,9 +150,9 @@ const MessagesManagementPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {stats.personal}
+                  {stats.customer}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Personal</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Customer Messages</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -250,15 +218,12 @@ const MessagesManagementPage = () => {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>
-                              {message.sender?.first_name?.charAt(0) || message.sender?.name?.charAt(0) || 'U'}
+                              U
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="font-medium">
-                              {message.sender?.first_name && message.sender?.last_name
-                                ? `${message.sender.first_name} ${message.sender.last_name}`
-                                : message.sender?.name || 'Unknown'
-                              }
+                              User {message.sender_id?.slice(0, 8) || 'System'}
                             </div>
                           </div>
                         </div>
