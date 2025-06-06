@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, hasRole } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -50,6 +51,8 @@ const LoginPage = () => {
 
       // Use the AuthContext login function which handles role-based redirection
       await login(email, password);
+      
+      // Navigation is handled by the login function in AuthContext
     } catch (error: any) {
       toast.error(error.message);
     } finally {

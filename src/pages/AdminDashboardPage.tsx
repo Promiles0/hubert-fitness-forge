@@ -46,6 +46,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Import the new page components
+import MembersManagementPage from "./admin/MembersManagementPage";
+import ClassesManagementPage from "./admin/ClassesManagementPage";
+import TrainersManagementPage from "./admin/TrainersManagementPage";
+import PaymentsManagementPage from "./admin/PaymentsManagementPage";
+import PlansManagementPage from "./admin/PlansManagementPage";
+import MessagesManagementPage from "./admin/MessagesManagementPage";
+import ReportsManagementPage from "./admin/ReportsManagementPage";
+import StoreManagementPage from "./admin/StoreManagementPage";
+import SettingsManagementPage from "./admin/SettingsManagementPage";
+
 const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -260,6 +271,31 @@ const AdminDashboardPage = () => {
   if (!user || !hasRole('admin')) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
   }
+
+  const renderPageContent = () => {
+    switch (location.pathname) {
+      case "/admin/members":
+        return <MembersManagementPage />;
+      case "/admin/classes":
+        return <ClassesManagementPage />;
+      case "/admin/trainers":
+        return <TrainersManagementPage />;
+      case "/admin/payments":
+        return <PaymentsManagementPage />;
+      case "/admin/membership-plans":
+        return <PlansManagementPage />;
+      case "/admin/messages":
+        return <MessagesManagementPage />;
+      case "/admin/reports":
+        return <ReportsManagementPage />;
+      case "/admin/store":
+        return <StoreManagementPage />;
+      case "/admin/settings":
+        return <SettingsManagementPage />;
+      default:
+        return renderDashboardContent();
+    }
+  };
 
   const renderDashboardContent = () => {
     if (location.pathname !== "/admin") {
@@ -648,7 +684,7 @@ const AdminDashboardPage = () => {
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
           <div className="p-6 max-w-7xl mx-auto">
-            {renderDashboardContent()}
+            {renderPageContent()}
           </div>
         </main>
       </div>
