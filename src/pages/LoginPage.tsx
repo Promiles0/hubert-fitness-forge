@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle, Dumbbell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +19,7 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -35,53 +36,20 @@ const LoginPage = () => {
     setEmailValid(emailRegex.test(email));
   }, [email]);
 
-  const cleanupAuthState = () => {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
+      // Handle remember me
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Handle remember me
-        if (rememberMe) {
-          localStorage.setItem("rememberedEmail", email);
-        } else {
-          localStorage.removeItem("rememberedEmail");
-        }
-
-        toast.success("Welcome back!");
-        // Force page reload for clean state
-        window.location.href = '/dashboard';
-      }
+      // Use the AuthContext login function which handles role-based redirection
+      await login(email, password);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

@@ -16,7 +16,9 @@ import {
   Star,
   Trophy,
   Zap,
-  Plus
+  Plus,
+  MapPin,
+  User
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -109,7 +111,7 @@ const DashboardOverview = () => {
       const [classesData, trainersData] = await Promise.all([
         supabase
           .from('classes')
-          .select('id, name, description, trainer_id')
+          .select('id, name, description, trainer_id, room')
           .in('id', classIds),
         supabase
           .from('trainers')
@@ -127,7 +129,8 @@ const DashboardOverview = () => {
           end_time: schedule.end_time,
           class: {
             name: classInfo?.name || 'Unknown Class',
-            description: classInfo?.description || ''
+            description: classInfo?.description || '',
+            room: classInfo?.room || 'TBA'
           },
           trainer: trainer ? {
             first_name: trainer.first_name,
@@ -266,6 +269,7 @@ const DashboardOverview = () => {
       return 'Tomorrow';
     } else {
       return date.toLocaleDateString('en-US', { 
+        weekday: 'short',
         month: 'short', 
         day: 'numeric' 
       });
@@ -410,7 +414,7 @@ const DashboardOverview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Real Upcoming Classes */}
+        {/* Enhanced Upcoming Classes Display */}
         <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
@@ -428,22 +432,50 @@ const DashboardOverview = () => {
               </div>
             ) : upcomingClasses && upcomingClasses.length > 0 ? (
               upcomingClasses.map((classItem) => (
-                <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div>
-                    <h3 className="text-gray-900 dark:text-white font-semibold">
-                      {classItem.class.name}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {classItem.trainer ? `${classItem.trainer.first_name} ${classItem.trainer.last_name}` : 'Instructor TBA'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-gray-900 dark:text-white font-medium">
-                      {formatClassTime(classItem.start_time, classItem.end_time)}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      {formatClassDate(classItem.start_time)}
-                    </p>
+                <div key={classItem.id} className="bg-gradient-to-r from-fitness-red/5 to-red-100/5 dark:from-fitness-red/10 dark:to-red-900/10 rounded-lg p-4 border border-fitness-red/20">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                          {classItem.class.name}
+                        </h3>
+                        <Badge className="bg-fitness-red/10 text-fitness-red border-fitness-red/20 text-xs">
+                          {formatClassDate(classItem.start_time)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <Clock className="h-4 w-4 text-fitness-red" />
+                          <span className="font-medium">
+                            {formatClassTime(classItem.start_time, classItem.end_time)}
+                          </span>
+                        </div>
+                        
+                        {classItem.trainer && (
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                            <User className="h-4 w-4 text-fitness-red" />
+                            <span>
+                              Instructor: {classItem.trainer.first_name} {classItem.trainer.last_name}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {classItem.class.room && (
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                            <MapPin className="h-4 w-4 text-fitness-red" />
+                            <span>Room: {classItem.class.room}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="ml-4">
+                      <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Booked
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               ))
