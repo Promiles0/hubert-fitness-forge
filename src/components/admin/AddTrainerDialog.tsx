@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+type TrainerSpecialty = Database["public"]["Enums"]["trainer_specialty"];
 
 interface AddTrainerDialogProps {
   open: boolean;
@@ -31,17 +34,23 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
     bio: "",
     hourly_rate: "",
     photo_url: "",
-    specialties: [] as string[]
+    specialties: [] as TrainerSpecialty[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  const specialtyOptions = [
-    "Personal Training", "Yoga", "Pilates", "HIIT", "Cardio", 
-    "Strength Training", "Zumba", "CrossFit", "Boxing", "Nutrition"
+  const specialtyOptions: { value: TrainerSpecialty; label: string }[] = [
+    { value: "strength", label: "Strength Training" },
+    { value: "cardio", label: "Cardio" },
+    { value: "hiit", label: "HIIT" },
+    { value: "yoga", label: "Yoga" },
+    { value: "pilates", label: "Pilates" },
+    { value: "crossfit", label: "CrossFit" },
+    { value: "nutrition", label: "Nutrition" },
+    { value: "rehabilitation", label: "Rehabilitation" }
   ];
 
-  const handleSpecialtyChange = (specialty: string, checked: boolean) => {
+  const handleSpecialtyChange = (specialty: TrainerSpecialty, checked: boolean) => {
     if (checked) {
       setFormData(prev => ({
         ...prev,
@@ -192,14 +201,14 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
             <Label>Specialties</Label>
             <div className="grid grid-cols-2 gap-2">
               {specialtyOptions.map((specialty) => (
-                <div key={specialty} className="flex items-center space-x-2">
+                <div key={specialty.value} className="flex items-center space-x-2">
                   <Checkbox
-                    id={specialty}
-                    checked={formData.specialties.includes(specialty)}
-                    onCheckedChange={(checked) => handleSpecialtyChange(specialty, !!checked)}
+                    id={specialty.value}
+                    checked={formData.specialties.includes(specialty.value)}
+                    onCheckedChange={(checked) => handleSpecialtyChange(specialty.value, !!checked)}
                   />
-                  <Label htmlFor={specialty} className="text-sm">
-                    {specialty}
+                  <Label htmlFor={specialty.value} className="text-sm">
+                    {specialty.label}
                   </Label>
                 </div>
               ))}
