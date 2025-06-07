@@ -33,23 +33,49 @@ const MembersManagementPage = () => {
   const { data: members, isLoading } = useQuery({
     queryKey: ['admin-members', searchTerm],
     queryFn: async () => {
-      let query = supabase
+      // First get members
+      let membersQuery = supabase
         .from('members')
-        .select(`
-          *,
-          profiles(avatar),
-          membership_plans(name, plan_type),
-          trainers(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        membersQuery = membersQuery.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      const { data: membersData, error: membersError } = await membersQuery;
+      if (membersError) throw membersError;
+
+      // Get all profiles for avatars
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, avatar');
+
+      // Get all membership plans
+      const { data: plansData } = await supabase
+        .from('membership_plans')
+        .select('id, name, plan_type');
+
+      // Get all trainers
+      const { data: trainersData } = await supabase
+        .from('trainers')
+        .select('id, first_name, last_name');
+
+      // Combine the data
+      const enrichedMembers = membersData?.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
+        const plan = plansData?.find(p => p.id === member.membership_plan_id);
+        const trainer = trainersData?.find(t => t.id === member.assigned_trainer_id);
+
+        return {
+          ...member,
+          profile,
+          membership_plan: plan,
+          trainer
+        };
+      });
+
+      return enrichedMembers;
     },
   });
 
@@ -148,7 +174,7 @@ const MembersManagementPage = () => {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={member.profiles?.avatar || undefined} />
+                        <AvatarImage src={member.profile?.avatar || undefined} />
                         <AvatarFallback>
                           {member.first_name.charAt(0)}{member.last_name.charAt(0)}
                         </AvatarFallback>
@@ -178,20 +204,20 @@ const MembersManagementPage = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {member.membership_plans ? (
+                    {member.membership_plan ? (
                       <div>
-                        <div className="font-medium">{member.membership_plans.name}</div>
-                        <Badge variant="outline">{member.membership_plans.plan_type}</Badge>
+                        <div className="font-medium">{member.membership_plan.name}</div>
+                        <Badge variant="outline">{member.membership_plan.plan_type}</Badge>
                       </div>
                     ) : (
                       <span className="text-gray-500">No plan</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {member.trainers ? (
+                    {member.trainer ? (
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {member.trainers.first_name} {member.trainers.last_name}
+                        {member.trainer.first_name} {member.trainer.last_name}
                       </div>
                     ) : (
                       <span className="text-gray-500">Unassigned</span>

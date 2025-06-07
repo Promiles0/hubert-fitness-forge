@@ -24,21 +24,35 @@ const SettingsManagementPage = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', searchTerm],
     queryFn: async () => {
-      let query = supabase
+      // First get profiles
+      let profilesQuery = supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles(role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`);
+        profilesQuery = profilesQuery.or(`name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      const { data: profilesData, error: profilesError } = await profilesQuery;
+      if (profilesError) throw profilesError;
+
+      // Get all user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      // Combine the data
+      const enrichedProfiles = profilesData?.map(profile => {
+        const userRoles = rolesData?.filter(role => role.user_id === profile.id) || [];
+        
+        return {
+          ...profile,
+          user_roles: userRoles
+        };
+      });
+
+      return enrichedProfiles;
     },
   });
 
