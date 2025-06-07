@@ -270,7 +270,9 @@ export type Database = {
           fitness_goals: string | null
           gender: Database["public"]["Enums"]["gender_type"] | null
           id: string
+          is_blocked: boolean | null
           join_date: string
+          last_activity: string | null
           last_name: string
           medical_notes: string | null
           membership_plan_id: string | null
@@ -290,7 +292,9 @@ export type Database = {
           fitness_goals?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: string
+          is_blocked?: boolean | null
           join_date?: string
+          last_activity?: string | null
           last_name: string
           medical_notes?: string | null
           membership_plan_id?: string | null
@@ -310,7 +314,9 @@ export type Database = {
           fitness_goals?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: string
+          is_blocked?: boolean | null
           join_date?: string
+          last_activity?: string | null
           last_name?: string
           medical_notes?: string | null
           membership_plan_id?: string | null
@@ -591,6 +597,7 @@ export type Database = {
         Row: {
           address: string | null
           avatar: string | null
+          bio: string | null
           created_at: string
           date_of_birth: string | null
           emergency_contact: string | null
@@ -602,12 +609,15 @@ export type Database = {
           medical_notes: string | null
           name: string | null
           phone: string | null
+          preferences: Json | null
+          profile_picture: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
           address?: string | null
           avatar?: string | null
+          bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           emergency_contact?: string | null
@@ -619,12 +629,15 @@ export type Database = {
           medical_notes?: string | null
           name?: string | null
           phone?: string | null
+          preferences?: Json | null
+          profile_picture?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
           address?: string | null
           avatar?: string | null
+          bio?: string | null
           created_at?: string
           date_of_birth?: string | null
           emergency_contact?: string | null
@@ -636,6 +649,8 @@ export type Database = {
           medical_notes?: string | null
           name?: string | null
           phone?: string | null
+          preferences?: Json | null
+          profile_picture?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -674,12 +689,38 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       trainers: {
         Row: {
+          availability: Json | null
           bio: string | null
           certifications: Json | null
           created_at: string
           email: string
+          experience_years: number | null
           first_name: string
           hourly_rate: number | null
           id: string
@@ -687,15 +728,18 @@ export type Database = {
           last_name: string
           phone: string | null
           photo_url: string | null
+          social_links: Json | null
           specialties: Database["public"]["Enums"]["trainer_specialty"][]
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          availability?: Json | null
           bio?: string | null
           certifications?: Json | null
           created_at?: string
           email: string
+          experience_years?: number | null
           first_name: string
           hourly_rate?: number | null
           id?: string
@@ -703,15 +747,18 @@ export type Database = {
           last_name: string
           phone?: string | null
           photo_url?: string | null
+          social_links?: Json | null
           specialties: Database["public"]["Enums"]["trainer_specialty"][]
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          availability?: Json | null
           bio?: string | null
           certifications?: Json | null
           created_at?: string
           email?: string
+          experience_years?: number | null
           first_name?: string
           hourly_rate?: number | null
           id?: string
@@ -719,6 +766,7 @@ export type Database = {
           last_name?: string
           phone?: string | null
           photo_url?: string | null
+          social_links?: Json | null
           specialties?: Database["public"]["Enums"]["trainer_specialty"][]
           updated_at?: string
           user_id?: string | null
@@ -772,9 +820,27 @@ export type Database = {
         | "attended"
         | "no_show"
       class_type: "group" | "personal" | "specialty" | "workshop"
+      class_type_enum:
+        | "yoga"
+        | "hiit"
+        | "cardio"
+        | "strength"
+        | "pilates"
+        | "crossfit"
+        | "zumba"
+        | "spinning"
+        | "boxing"
+        | "functional"
       gender_type: "male" | "female" | "other" | "prefer_not_to_say"
       member_status: "active" | "suspended" | "expired" | "pending"
       membership_plan_type: "monthly" | "quarterly" | "yearly" | "trial" | "vip"
+      membership_plan_type_enum:
+        | "basic"
+        | "premium"
+        | "pro"
+        | "vip"
+        | "student"
+        | "family"
       message_type: "admin" | "customer" | "system"
       payment_method:
         | "card"
@@ -916,9 +982,29 @@ export const Constants = {
         "no_show",
       ],
       class_type: ["group", "personal", "specialty", "workshop"],
+      class_type_enum: [
+        "yoga",
+        "hiit",
+        "cardio",
+        "strength",
+        "pilates",
+        "crossfit",
+        "zumba",
+        "spinning",
+        "boxing",
+        "functional",
+      ],
       gender_type: ["male", "female", "other", "prefer_not_to_say"],
       member_status: ["active", "suspended", "expired", "pending"],
       membership_plan_type: ["monthly", "quarterly", "yearly", "trial", "vip"],
+      membership_plan_type_enum: [
+        "basic",
+        "premium",
+        "pro",
+        "vip",
+        "student",
+        "family",
+      ],
       message_type: ["admin", "customer", "system"],
       payment_method: [
         "card",

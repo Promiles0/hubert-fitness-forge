@@ -1,241 +1,95 @@
 
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { 
-  Users, 
-  Activity, 
-  Calendar, 
-  BarChart2, 
-  User, 
-  DollarSign, 
-  Edit, 
-  MessageSquare, 
-  FileText, 
-  Store, 
-  Settings
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import LoadingSpinner from "@/components/LoadingSpinner";
-
-// Import admin page components
-import MembersManagementPage from "./admin/MembersManagementPage";
-import ClassesManagementPage from "./admin/ClassesManagementPage";
-import TrainersManagementPage from "./admin/TrainersManagementPage";
-import PaymentsManagementPage from "./admin/PaymentsManagementPage";
-import PlansManagementPage from "./admin/PlansManagementPage";
-import MessagesManagementPage from "./admin/MessagesManagementPage";
-import ReportsManagementPage from "./admin/ReportsManagementPage";
-import StoreManagementPage from "./admin/StoreManagementPage";
-import SettingsManagementPage from "./admin/SettingsManagementPage";
-
-// Import new components
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
-import AdminStatsGrid from "@/components/admin/AdminStatsGrid";
-import AdminQuickActions from "@/components/admin/AdminQuickActions";
+import EnhancedAdminStatsGrid from "@/components/admin/EnhancedAdminStatsGrid";
 import AdminRecentActivity from "@/components/admin/AdminRecentActivity";
-import { useAdminStats } from "@/hooks/useAdminStats";
+import { useEnhancedAdminStats } from "@/hooks/useEnhancedAdminStats";
 
 const AdminDashboardPage = () => {
+  const { user, hasRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout, hasRole } = useAuth();
-  
-  // Fetch comprehensive dashboard statistics
-  const { data: stats, isLoading: isStatsLoading } = useAdminStats();
+  const { data: stats, isLoading } = useEnhancedAdminStats();
 
-  // Check admin access
+  // Check if user is authenticated and has admin permissions
   useEffect(() => {
     if (!user) {
-      navigate("/login", { state: { from: location.pathname } });
+      navigate("/login");
+      toast({
+        title: "Access Denied",
+        description: "Please login to access the admin dashboard",
+        variant: "destructive",
+      });
       return;
     }
     
     if (!hasRole('admin')) {
       navigate("/dashboard");
-      toast.error("Access denied. Admin privileges required.");
+      toast({
+        title: "Access Denied",
+        description: "You do not have permission to access the admin dashboard",
+        variant: "destructive",
+      });
     }
-  }, [user, hasRole, navigate, location.pathname]);
+  }, [user, hasRole, navigate]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  const navigation = [
-    { 
-      name: "Dashboard", 
-      href: "/admin", 
-      icon: BarChart2, 
-      description: "Overview & Analytics",
-      active: location.pathname === "/admin"
-    },
-    { 
-      name: "Members", 
-      href: "/admin/members", 
-      icon: Users, 
-      description: "Manage Members",
-      active: location.pathname === "/admin/members"
-    },
-    { 
-      name: "Classes", 
-      href: "/admin/classes", 
-      icon: Calendar, 
-      description: "Schedule & Bookings",
-      active: location.pathname === "/admin/classes"
-    },
-    { 
-      name: "Trainers", 
-      href: "/admin/trainers", 
-      icon: User, 
-      description: "Staff Management",
-      active: location.pathname === "/admin/trainers"
-    },
-    { 
-      name: "Payments", 
-      href: "/admin/payments", 
-      icon: DollarSign, 
-      description: "Financial Records",
-      active: location.pathname === "/admin/payments"
-    },
-    { 
-      name: "Plans", 
-      href: "/admin/membership-plans", 
-      icon: Edit, 
-      description: "Membership Plans",
-      active: location.pathname === "/admin/membership-plans"
-    },
-    { 
-      name: "Messages", 
-      href: "/admin/messages", 
-      icon: MessageSquare, 
-      description: "Communications",
-      active: location.pathname === "/admin/messages"
-    },
-    { 
-      name: "Reports", 
-      href: "/admin/reports", 
-      icon: FileText, 
-      description: "Analytics & Logs",
-      active: location.pathname === "/admin/reports"
-    },
-    { 
-      name: "Store", 
-      href: "/admin/store", 
-      icon: Store, 
-      description: "Product Management",
-      active: location.pathname === "/admin/store"
-    },
-    { 
-      name: "Settings", 
-      href: "/admin/settings", 
-      icon: Settings, 
-      description: "System Configuration",
-      active: location.pathname === "/admin/settings"
-    }
-  ];
-
+  // Don't render if user doesn't have access
   if (!user || !hasRole('admin')) {
-    return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
+    return null;
   }
 
-  const renderPageContent = () => {
-    switch (location.pathname) {
-      case "/admin/members":
-        return <MembersManagementPage />;
-      case "/admin/classes":
-        return <ClassesManagementPage />;
-      case "/admin/trainers":
-        return <TrainersManagementPage />;
-      case "/admin/payments":
-        return <PaymentsManagementPage />;
-      case "/admin/membership-plans":
-        return <PlansManagementPage />;
-      case "/admin/messages":
-        return <MessagesManagementPage />;
-      case "/admin/reports":
-        return <ReportsManagementPage />;
-      case "/admin/store":
-        return <StoreManagementPage />;
-      case "/admin/settings":
-        return <SettingsManagementPage />;
-      default:
-        return renderDashboardContent();
-    }
-  };
-
-  const renderDashboardContent = () => {
-    if (location.pathname !== "/admin") {
-      return (
-        <div className="flex items-center justify-center h-96">
-          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
-            <CardContent className="p-8 text-center">
-              <div className="mb-4">
-                <Settings className="h-16 w-16 text-fitness-red mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Feature Under Development
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                  This section of the admin dashboard is being built. Check back soon for new features and functionality.
-                </p>
-              </div>
-              <Button 
-                onClick={() => navigate('/admin')}
-                className="bg-fitness-red hover:bg-red-700"
-              >
-                Return to Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-8">
-        {/* Enhanced Stats Grid */}
-        <AdminStatsGrid stats={stats} isLoading={isStatsLoading} />
-
-        {/* Quick Actions */}
-        <AdminQuickActions />
-
-        {/* Recent Activity */}
-        <AdminRecentActivity stats={stats} />
-      </div>
-    );
-  };
-
-  const currentPage = navigation.find(item => item.active);
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex">
-      {/* Sidebar */}
-      <AdminSidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        navigation={navigation}
-        onLogout={handleLogout}
-      />
+    <div className="min-h-screen bg-fitness-black text-white">
+      <div className="flex">
+        <AdminSidebar />
+        <div className="flex-1 md:ml-64">
+          <AdminHeader />
+          <main className="p-6 space-y-8">
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-fitness-red to-red-600 rounded-lg p-6 shadow-2xl">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Welcome back, Admin! 👋
+              </h1>
+              <p className="text-white/90">
+                Here's what's happening with your fitness center today.
+              </p>
+            </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Header */}
-        <AdminHeader
-          setSidebarOpen={setSidebarOpen}
-          currentPageName={currentPage?.name}
-          currentPageDescription={currentPage?.description}
-        />
+            {/* Enhanced Stats Grid */}
+            <EnhancedAdminStatsGrid stats={stats} isLoading={isLoading} />
 
-        {/* Main content area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
-          <div className="p-6 max-w-7xl mx-auto">
-            {renderPageContent()}
-          </div>
-        </main>
+            {/* Recent Activity */}
+            <AdminRecentActivity stats={stats} />
+
+            {/* Quick Actions */}
+            <div className="bg-fitness-darkGray rounded-lg border border-gray-800 p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button 
+                  onClick={() => navigate('/admin/members')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg transition-colors"
+                >
+                  View All Members
+                </button>
+                <button 
+                  onClick={() => navigate('/admin/classes')}
+                  className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg transition-colors"
+                >
+                  Manage Classes
+                </button>
+                <button 
+                  onClick={() => navigate('/admin/settings')}
+                  className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg transition-colors"
+                >
+                  System Settings
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
