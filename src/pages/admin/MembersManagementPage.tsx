@@ -53,8 +53,7 @@ const MembersManagementPage = () => {
         .from('members')
         .select(`
           *,
-          membership_plans(id, name, plan_type),
-          trainers(id, first_name, last_name)
+          membership_plans(id, name, plan_type)
         `)
         .order('created_at', { ascending: false });
 
@@ -72,12 +71,21 @@ const MembersManagementPage = () => {
         .select('id, avatar')
         .in('id', userIds);
 
+      // Get trainers separately
+      const trainerIds = membersData?.map(m => m.assigned_trainer_id).filter(Boolean) || [];
+      const { data: trainersData } = await supabase
+        .from('trainers')
+        .select('id, first_name, last_name')
+        .in('id', trainerIds);
+
       // Combine the data
       const enrichedMembers = membersData?.map(member => {
         const profile = profilesData?.find(p => p.id === member.user_id);
+        const trainer = trainersData?.find(t => t.id === member.assigned_trainer_id);
         return {
           ...member,
-          profile
+          profile,
+          trainer
         };
       });
 
@@ -276,10 +284,10 @@ const MembersManagementPage = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {member.trainers ? (
+                    {member.trainer ? (
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {member.trainers.first_name} {member.trainers.last_name}
+                        {member.trainer.first_name} {member.trainer.last_name}
                       </div>
                     ) : (
                       <span className="text-gray-500">Unassigned</span>
