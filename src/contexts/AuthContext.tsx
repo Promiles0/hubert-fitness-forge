@@ -1,176 +1,31 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+
+interface Profile {
+  id: string;
+  name?: string;
+  username?: string;
+  avatar?: string;
+  phone?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
+  isAuthenticated: boolean;
   loading: boolean;
-  userRoles: string[];
-  signUp: (email: string, password: string, userData?: any) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  signup: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
-  refreshUserRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
-
-  const fetchUserRoles = async (userId: string) => {
-    try {
-      const { data: roles, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      return roles?.map(r => r.role) || [];
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-      return [];
-    }
-  };
-
-  const refreshUserRoles = async () => {
-    if (user) {
-      const roles = await fetchUserRoles(user.id);
-      setUserRoles(roles);
-    }
-  };
-
-  useEffect(() => {
-    const getSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (session?.user) {
-          setUser(session.user);
-          const roles = await fetchUserRoles(session.user.id);
-          setUserRoles(roles);
-        }
-      } catch (error) {
-        console.error('Error getting session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-          const roles = await fetchUserRoles(session.user.id);
-          setUserRoles(roles);
-          setLoading(false);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setUserRoles([]);
-          setLoading(false);
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          setUser(session.user);
-          // Optionally refresh roles on token refresh
-          const roles = await fetchUserRoles(session.user.id);
-          setUserRoles(roles);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signUp = async (email: string, password: string, userData?: any) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        toast.success('Account created successfully!');
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        const roles = await fetchUserRoles(data.user.id);
-        setUserRoles(roles);
-        toast.success('Signed in successfully!');
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      setUserRoles([]);
-      toast.success('Signed out successfully!');
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const hasRole = (role: string): boolean => {
-    return userRoles.includes(role);
-  };
-
-  const value = {
-    user,
-    loading,
-    userRoles,
-    signUp,
-    signIn,
-    logout,
-    hasRole,
-    refreshUserRoles,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -178,4 +33,111 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user profile data
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data as Profile;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch user roles
+  const { data: userRoles = [] } = useQuery({
+    queryKey: ['user-roles', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data.map(r => r.role);
+    },
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signup = async (email: string, password: string, metadata?: any) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+      },
+    });
+    return { error };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const hasRole = (role: string) => {
+    return userRoles.includes(role);
+  };
+
+  const isAuthenticated = !!user;
+
+  const value: AuthContextType = {
+    user,
+    profile,
+    isAuthenticated,
+    loading,
+    login,
+    signup,
+    logout,
+    hasRole,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

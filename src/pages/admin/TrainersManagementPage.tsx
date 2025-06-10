@@ -4,81 +4,46 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  Mail,
-  Phone,
-  User,
-  Star,
-  DollarSign
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash2, Mail, Phone, Star } from "lucide-react";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type TrainerSpecialty = "yoga" | "hiit" | "cardio" | "strength" | "pilates" | "crossfit" | "nutrition" | "rehabilitation";
 
 const TrainersManagementPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const [newTrainer, setNewTrainer] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    bio: '',
-    specialties: [] as string[],
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    specialties: [] as TrainerSpecialty[],
     experience_years: 0,
     hourly_rate: 0,
-    photo_url: '',
+    photo_url: "",
     is_active: true,
-    certifications: [],
+    certifications: [] as string[],
     availability: {}
   });
 
   const { data: trainers, isLoading } = useQuery({
-    queryKey: ['admin-trainers', searchTerm],
+    queryKey: ['trainers'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('trainers')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (searchTerm) {
-        query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
+      
       if (error) throw error;
       return data;
     },
@@ -93,26 +58,33 @@ const TrainersManagementPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
-      toast.success('Trainer added successfully');
-      setShowAddDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['trainers'] });
+      toast({
+        title: "Success",
+        description: "Trainer added successfully",
+      });
+      setIsAddDialogOpen(false);
       setNewTrainer({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        bio: '',
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        bio: "",
         specialties: [],
         experience_years: 0,
         hourly_rate: 0,
-        photo_url: '',
+        photo_url: "",
         is_active: true,
         certifications: [],
         availability: {}
       });
     },
-    onError: (error: any) => {
-      toast.error('Failed to add trainer: ' + error.message);
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add trainer: " + error.message,
+        variant: "destructive",
+      });
     }
   });
 
@@ -126,26 +98,45 @@ const TrainersManagementPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
-      toast.success('Trainer deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['trainers'] });
+      toast({
+        title: "Success",
+        description: "Trainer deleted successfully",
+      });
     },
-    onError: (error: any) => {
-      toast.error('Failed to delete trainer: ' + error.message);
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete trainer: " + error.message,
+        variant: "destructive",
+      });
     }
   });
 
-  const handleSpecialtyChange = (specialty: string) => {
+  const handleAddTrainer = async () => {
+    if (!newTrainer.first_name || !newTrainer.last_name || !newTrainer.email) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addTrainerMutation.mutate(newTrainer);
+  };
+
+  const handleSpecialtyChange = (specialty: TrainerSpecialty, checked: boolean) => {
     setNewTrainer(prev => ({
       ...prev,
-      specialties: prev.specialties.includes(specialty)
-        ? prev.specialties.filter(s => s !== specialty)
-        : [...prev.specialties, specialty]
+      specialties: checked 
+        ? [...prev.specialties, specialty]
+        : prev.specialties.filter(s => s !== specialty)
     }));
   };
 
-  const specialtyOptions = [
-    'strength', 'cardio', 'hiit', 'yoga', 'pilates', 
-    'crossfit', 'nutrition', 'rehabilitation'
+  const availableSpecialties: TrainerSpecialty[] = [
+    "yoga", "hiit", "cardio", "strength", "pilates", "crossfit", "nutrition", "rehabilitation"
   ];
 
   if (isLoading) {
@@ -154,15 +145,14 @@ const TrainersManagementPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trainers</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trainers Management</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage trainer profiles and schedules
+            Manage your fitness trainers and instructors
           </p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-fitness-red hover:bg-red-700">
               <Plus className="h-4 w-4 mr-2" />
@@ -173,145 +163,110 @@ const TrainersManagementPage = () => {
             <DialogHeader>
               <DialogTitle>Add New Trainer</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6 py-4">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="first_name">First Name *</Label>
-                  <Input
-                    id="first_name"
-                    value={newTrainer.first_name}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, first_name: e.target.value }))}
-                    placeholder="Enter first name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="last_name">Last Name *</Label>
-                  <Input
-                    id="last_name"
-                    value={newTrainer.last_name}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, last_name: e.target.value }))}
-                    placeholder="Enter last name"
-                    required
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">First Name *</Label>
+                <Input
+                  id="first_name"
+                  value={newTrainer.first_name}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, first_name: e.target.value })}
+                  placeholder="Enter first name"
+                />
               </div>
-
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newTrainer.email}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="trainer@example.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={newTrainer.phone}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last Name *</Label>
+                <Input
+                  id="last_name"
+                  value={newTrainer.last_name}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, last_name: e.target.value })}
+                  placeholder="Enter last name"
+                />
               </div>
-
-              {/* Professional Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="experience_years">Experience (Years)</Label>
-                  <Input
-                    id="experience_years"
-                    type="number"
-                    min="0"
-                    value={newTrainer.experience_years}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, experience_years: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
-                  <Input
-                    id="hourly_rate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newTrainer.hourly_rate}
-                    onChange={(e) => setNewTrainer(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newTrainer.email}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, email: e.target.value })}
+                  placeholder="Enter email address"
+                />
               </div>
-
-              {/* Bio */}
-              <div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={newTrainer.phone}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="experience_years">Experience (Years)</Label>
+                <Input
+                  id="experience_years"
+                  type="number"
+                  value={newTrainer.experience_years}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, experience_years: parseInt(e.target.value) || 0 })}
+                  placeholder="Years of experience"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
+                <Input
+                  id="hourly_rate"
+                  type="number"
+                  value={newTrainer.hourly_rate}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, hourly_rate: parseFloat(e.target.value) || 0 })}
+                  placeholder="Hourly rate"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="photo_url">Profile Photo URL</Label>
+                <Input
+                  id="photo_url"
+                  value={newTrainer.photo_url}
+                  onChange={(e) => setNewTrainer({ ...newTrainer, photo_url: e.target.value })}
+                  placeholder="Enter photo URL"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
                   value={newTrainer.bio}
-                  onChange={(e) => setNewTrainer(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Tell us about this trainer's background and expertise..."
+                  onChange={(e) => setNewTrainer({ ...newTrainer, bio: e.target.value })}
+                  placeholder="Enter trainer bio and background"
                   rows={3}
                 />
               </div>
-
-              {/* Photo URL */}
-              <div>
-                <Label htmlFor="photo_url">Photo URL</Label>
-                <Input
-                  id="photo_url"
-                  value={newTrainer.photo_url}
-                  onChange={(e) => setNewTrainer(prev => ({ ...prev, photo_url: e.target.value }))}
-                  placeholder="https://example.com/photo.jpg"
-                />
-              </div>
-
-              {/* Specialties */}
-              <div>
+              <div className="col-span-2 space-y-2">
                 <Label>Specialties</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                  {specialtyOptions.map((specialty) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {availableSpecialties.map((specialty) => (
                     <div key={specialty} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id={specialty}
                         checked={newTrainer.specialties.includes(specialty)}
-                        onChange={() => handleSpecialtyChange(specialty)}
-                        className="rounded border-gray-300"
+                        onCheckedChange={(checked) => handleSpecialtyChange(specialty, !!checked)}
                       />
-                      <Label htmlFor={specialty} className="text-sm capitalize">
+                      <Label htmlFor={specialty} className="capitalize">
                         {specialty}
                       </Label>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Active Status */}
-              <div className="flex items-center justify-between">
-                <Label htmlFor="is_active">Active Trainer</Label>
-                <Switch
-                  id="is_active"
-                  checked={newTrainer.is_active}
-                  onCheckedChange={(checked) => setNewTrainer(prev => ({ ...prev, is_active: checked }))}
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              <div className="col-span-2 flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button 
-                  onClick={() => addTrainerMutation.mutate(newTrainer)}
-                  disabled={!newTrainer.first_name || !newTrainer.last_name || !newTrainer.email}
+                  onClick={handleAddTrainer}
+                  disabled={addTrainerMutation.isPending}
                   className="bg-fitness-red hover:bg-red-700"
                 >
-                  Add Trainer
+                  {addTrainerMutation.isPending ? "Adding..." : "Add Trainer"}
                 </Button>
               </div>
             </div>
@@ -319,165 +274,125 @@ const TrainersManagementPage = () => {
         </Dialog>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-green-600">
-              {trainers?.filter(t => t.is_active).length || 0}
+      {/* Trainers Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {trainers?.map((trainer) => (
+          <Card key={trainer.id} className="overflow-hidden">
+            <div className="relative">
+              <div className="h-48 bg-gradient-to-br from-fitness-red to-red-700">
+                {trainer.photo_url && (
+                  <img
+                    src={trainer.photo_url}
+                    alt={`${trainer.first_name} ${trainer.last_name}`}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="absolute bottom-4 left-4">
+                <Avatar className="h-16 w-16 border-4 border-white">
+                  <AvatarImage src={trainer.photo_url} />
+                  <AvatarFallback className="bg-fitness-red text-white text-lg">
+                    {trainer.first_name?.[0]}{trainer.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Active Trainers</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-blue-600">
-              {trainers?.length || 0}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Trainers</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-purple-600">
-              {trainers?.reduce((sum, t) => sum + (t.experience_years || 0), 0) || 0}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Experience (Years)</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-orange-600">
-              ${trainers?.reduce((sum, t) => sum + (t.hourly_rate || 0), 0).toFixed(2) || '0.00'}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Hourly Rates</p>
-          </CardContent>
-        </Card>
-      </div>
+            
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {trainer.first_name} {trainer.last_name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <Star className="h-4 w-4" />
+                    {trainer.experience_years} years experience
+                  </div>
+                </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search trainers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+                {trainer.bio && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {trainer.bio}
+                  </p>
+                )}
 
-      {/* Trainers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Trainers List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Trainer</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Specialties</TableHead>
-                <TableHead>Experience</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {trainers?.map((trainer) => (
-                <TableRow key={trainer.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={trainer.photo_url || undefined} />
-                        <AvatarFallback>
-                          {trainer.first_name.charAt(0)}{trainer.last_name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">
-                          {trainer.first_name} {trainer.last_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: {trainer.id.slice(0, 8)}
-                        </div>
-                      </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-600 dark:text-gray-400">{trainer.email}</span>
+                  </div>
+                  {trainer.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <span className="text-gray-600 dark:text-gray-400">{trainer.phone}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-3 w-3" />
-                        {trainer.email}
-                      </div>
-                      {trainer.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-3 w-3" />
-                          {trainer.phone}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
+                  )}
+                </div>
+
+                {trainer.specialties && trainer.specialties.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Specialties</Label>
                     <div className="flex flex-wrap gap-1">
-                      {trainer.specialties?.slice(0, 3).map((specialty, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                      {(trainer.specialties as string[]).map((specialty, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
                           {specialty}
                         </Badge>
                       ))}
-                      {trainer.specialties?.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{trainer.specialties.length - 3} more
-                        </Badge>
-                      )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4" />
-                      {trainer.experience_years || 0} years
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      ${trainer.hourly_rate || 0}/hr
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      className={
-                        trainer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }
+                  </div>
+                )}
+
+                {trainer.hourly_rate && (
+                  <div className="text-lg font-bold text-fitness-red">
+                    ${trainer.hourly_rate}/hour
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-4">
+                  <Badge variant={trainer.is_active ? "default" : "destructive"}>
+                    {trainer.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => deleteTrainerMutation.mutate(trainer.id)}
+                      disabled={deleteTrainerMutation.isPending}
                     >
-                      {trainer.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => deleteTrainerMutation.mutate(trainer.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {(!trainers || trainers.length === 0) && (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <Plus className="h-16 w-16 mx-auto" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No trainers found
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Start by adding your first trainer to the system.
+          </p>
+          <Button 
+            onClick={() => setIsAddDialogOpen(true)}
+            className="bg-fitness-red hover:bg-red-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Trainer
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

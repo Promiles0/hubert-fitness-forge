@@ -1,10 +1,9 @@
 
-import { useState, useEffect } from 'react';
-import { Menu, X, Dumbbell, LogIn, UserPlus, LogOut, User, Calendar } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,85 +11,104 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
+import { Menu, X, User, Settings, LogOut, Shield } from 'lucide-react';
 
 const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, isAuthenticated, logout, hasRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const handleDashboardClick = () => {
+    if (hasRole('admin')) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Programs', href: '/programs' },
+    { name: 'Trainers', href: '/trainers' },
+    { name: 'Schedule', href: '/schedule' },
+    { name: 'Membership', href: '/membership' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 dark:bg-fitness-black/95 py-2 shadow-md backdrop-blur-sm' : 'bg-transparent py-4'}`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Dumbbell className="h-7 w-7 text-fitness-red" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
-            </h1>
+    <nav className="bg-fitness-black shadow-lg sticky top-0 z-50">
+      <div className="container-custom">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-fitness-red rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">F</span>
+            </div>
+            <span className="text-white font-bold text-xl">FitLife</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Home</Link>
-            <Link to="/about" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">About</Link>
-            <Link to="/programs" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Programs</Link>
-            <Link to="/membership" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Membership</Link>
-            <Link to="/trainers" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Trainers</Link>
-            <Link to="/schedule" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Schedule</Link>
-            <Link to="/contact" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors">Contact</Link>
-            
-            {/* Show different UI based on auth state */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* User Menu / Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10 border border-fitness-red">
-                      <AvatarImage src={user?.avatar} alt={user?.username || user?.name} />
-                      <AvatarFallback className="bg-fitness-red text-white">
-                        {user?.username ? user.username.charAt(0).toUpperCase() : user?.name?.charAt(0)}
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar || undefined} />
+                      <AvatarFallback>
+                        {profile?.username?.charAt(0) || profile?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="font-medium">{user?.username || user?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.username || profile?.username || profile?.name || 'User'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={handleDashboardClick}>
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/dashboard/classes')} className="cursor-pointer">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>My Classes</span>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
                   </DropdownMenuItem>
+                  {hasRole('admin') && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
+                  <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -99,96 +117,124 @@ const Navbar = () => {
             ) : (
               <div className="flex items-center space-x-4">
                 <Link to="/login">
-                  <Button variant="outline" size="sm" className="border-gray-300 dark:border-white text-gray-700 dark:text-white hover:bg-fitness-red hover:text-white hover:border-fitness-red">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
+                  <Button variant="ghost" className="text-white hover:bg-fitness-red">
+                    Sign In
                   </Button>
                 </Link>
                 <Link to="/signup">
-                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold" size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" />
+                  <Button className="bg-fitness-red hover:bg-red-700 text-white">
                     Join Now
                   </Button>
                 </Link>
               </div>
             )}
-          </nav>
+          </div>
 
-          {/* Mobile Navigation Toggle */}
-          <div className="md:hidden flex items-center gap-2">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors"
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-300 hover:text-white focus:outline-none"
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white/95 dark:bg-fitness-black/95 absolute top-full left-0 w-full py-4 animate-fade-in backdrop-blur-sm">
-          <div className="container mx-auto px-4 flex flex-col space-y-4">
-            <Link to="/" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Home</Link>
-            <Link to="/about" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">About</Link>
-            <Link to="/programs" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Programs</Link>
-            <Link to="/membership" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Membership</Link>
-            <Link to="/trainers" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Trainers</Link>
-            <Link to="/schedule" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Schedule</Link>
-            <Link to="/contact" className="text-gray-700 dark:text-white hover:text-fitness-red transition-colors py-2">Contact</Link>
-            
-            {/* Show different UI based on auth state for mobile */}
-            {isAuthenticated ? (
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3 mb-4 py-2">
-                  <Avatar className="h-8 w-8 border border-fitness-red">
-                    <AvatarImage src={user?.avatar} alt={user?.username || user?.name} />
-                    <AvatarFallback className="bg-fitness-red text-white">
-                      {user?.username ? user.username.charAt(0).toUpperCase() : user?.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-gray-900 dark:text-white font-medium">{user?.username || user?.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-fitness-darkGray">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              {isAuthenticated ? (
+                <div className="border-t border-gray-700 pt-4">
+                  <div className="flex items-center px-3 py-2">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarImage src={profile?.avatar || undefined} />
+                      <AvatarFallback>
+                        {profile?.username?.charAt(0) || profile?.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="text-sm font-medium text-white">
+                        {profile?.username || profile?.username || profile?.name || 'User'}
+                      </div>
+                      <div className="text-xs text-gray-400">{user?.email}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        handleDashboardClick();
+                        setIsOpen(false);
+                      }}
+                      className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium w-full text-left"
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/dashboard/profile');
+                        setIsOpen(false);
+                      }}
+                      className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium w-full text-left"
+                    >
+                      Profile
+                    </button>
+                    {hasRole('admin') && (
+                      <button
+                        onClick={() => {
+                          navigate('/admin');
+                          setIsOpen(false);
+                        }}
+                        className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium w-full text-left"
+                      >
+                        Admin Panel
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                      className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium w-full text-left"
+                    >
+                      Sign Out
+                    </button>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-gray-700 dark:text-white border-gray-300 dark:border-white hover:text-fitness-red hover:border-fitness-red mb-3"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Button>
-                <Button 
-                  className="w-full justify-start bg-fitness-red hover:bg-red-700 text-white" 
-                  onClick={logout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Link to="/login">
-                  <Button variant="outline" className="w-full border-gray-300 dark:border-white text-gray-700 dark:text-white hover:bg-fitness-red hover:text-white hover:border-fitness-red">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="w-full bg-fitness-red hover:bg-red-700 text-white font-bold">
-                    <UserPlus className="mr-2 h-4 w-4" />
+              ) : (
+                <div className="border-t border-gray-700 pt-4 space-y-1">
+                  <Link
+                    to="/login"
+                    className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="text-gray-300 hover:text-white block px-3 py-2 text-base font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
                     Join Now
-                  </Button>
-                </Link>
-              </div>
-            )}
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </header>
+        )}
+      </div>
+    </nav>
   );
 };
 
