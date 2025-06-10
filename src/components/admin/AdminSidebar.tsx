@@ -46,7 +46,7 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar = ({ sidebarOpen, setSidebarOpen, navigation, onLogout }: AdminSidebarProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return (
     <>
@@ -91,14 +91,14 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, navigation, onLogout }: Adm
                 <Button variant="ghost" className="w-full p-0 h-auto justify-start">
                   <div className="flex items-center gap-3 w-full">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={user?.avatar} />
+                      <AvatarImage src={profile?.avatar} />
                       <AvatarFallback className="bg-fitness-red text-white">
-                        {user?.name?.charAt(0) || 'A'}
+                        {profile?.name?.charAt(0) || profile?.username?.charAt(0) || 'A'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {user?.name || 'Admin'}
+                        {profile?.name || profile?.username || 'Admin'}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Administrator

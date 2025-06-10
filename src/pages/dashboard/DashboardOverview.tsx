@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +28,8 @@ import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 const DashboardOverview = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const { user, profile } = useAuth();
+  const [localProfile, setLocalProfile] = useState<any>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ const DashboardOverview = () => {
           .single();
         
         if (profileData) {
-          setProfile(profileData);
+          setLocalProfile(profileData);
           
           // Handle avatar URL
           if (profileData.avatar) {
@@ -219,14 +220,14 @@ const DashboardOverview = () => {
   });
 
   const getDisplayName = () => {
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
+    if (localProfile?.first_name && localProfile?.last_name) {
+      return `${localProfile.first_name} ${localProfile.last_name}`;
     }
-    if (profile?.name) {
-      return profile.name;
+    if (localProfile?.name || profile?.name) {
+      return localProfile?.name || profile?.name;
     }
-    if (user?.name) {
-      return user.name;
+    if (profile?.username) {
+      return profile.username;
     }
     return user?.email?.split('@')[0] || 'Member';
   };
@@ -349,10 +350,10 @@ const DashboardOverview = () => {
                     {stats.workoutStreak}-Day Streak
                   </Badge>
                 )}
-                {profile?.fitness_goals && (
+                {(localProfile?.fitness_goals || profile?.fitness_goals) && (
                   <Badge className="bg-green-400/20 text-green-100 border-green-300/30">
                     <Target className="h-3 w-3 mr-1" />
-                    {profile.fitness_goals.split(',')[0]}
+                    {(localProfile?.fitness_goals || profile?.fitness_goals)?.split(',')[0]}
                   </Badge>
                 )}
               </div>

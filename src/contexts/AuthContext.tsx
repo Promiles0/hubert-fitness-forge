@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', user.id);
       
       if (error) throw error;
-      return data.map(r => r.role);
+      return data.map(r => r.role as string);
     },
     enabled: !!user?.id,
   });
