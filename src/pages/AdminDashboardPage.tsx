@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,11 +8,109 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import EnhancedAdminStatsGrid from "@/components/admin/EnhancedAdminStatsGrid";
 import AdminRecentActivity from "@/components/admin/AdminRecentActivity";
 import { useEnhancedAdminStats } from "@/hooks/useEnhancedAdminStats";
+import { 
+  Users, 
+  Activity, 
+  Calendar, 
+  BarChart2, 
+  User, 
+  DollarSign, 
+  Edit, 
+  MessageSquare, 
+  FileText, 
+  Store, 
+  Settings
+} from "lucide-react";
 
 const AdminDashboardPage = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, logout } = useAuth();
   const navigate = useNavigate();
   const { data: stats, isLoading } = useEnhancedAdminStats();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Navigation items for the sidebar
+  const navigation = [
+    {
+      name: "Dashboard",
+      href: "/admin",
+      icon: BarChart2,
+      description: "Overview & Analytics",
+      active: true
+    },
+    {
+      name: "Members",
+      href: "/admin/members",
+      icon: Users,
+      description: "Member Management",
+      active: false
+    },
+    {
+      name: "Classes",
+      href: "/admin/classes",
+      icon: Calendar,
+      description: "Class Scheduling",
+      active: false
+    },
+    {
+      name: "Trainers",
+      href: "/admin/trainers",
+      icon: User,
+      description: "Staff Management",
+      active: false
+    },
+    {
+      name: "Payments",
+      href: "/admin/payments",
+      icon: DollarSign,
+      description: "Financial Overview",
+      active: false
+    },
+    {
+      name: "Reports",
+      href: "/admin/reports",
+      icon: FileText,
+      description: "Analytics & Reports",
+      active: false
+    },
+    {
+      name: "Messages",
+      href: "/admin/messages",
+      icon: MessageSquare,
+      description: "Communication",
+      active: false
+    },
+    {
+      name: "Store",
+      href: "/admin/store",
+      icon: Store,
+      description: "Product Management",
+      active: false
+    },
+    {
+      name: "Settings",
+      href: "/admin/settings",
+      icon: Settings,
+      description: "System Configuration",
+      active: false
+    }
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Check if user is authenticated and has admin permissions
   useEffect(() => {
@@ -44,9 +142,18 @@ const AdminDashboardPage = () => {
   return (
     <div className="min-h-screen bg-fitness-black text-white">
       <div className="flex">
-        <AdminSidebar />
+        <AdminSidebar 
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          navigation={navigation}
+          onLogout={handleLogout}
+        />
         <div className="flex-1 md:ml-64">
-          <AdminHeader />
+          <AdminHeader 
+            setSidebarOpen={setSidebarOpen}
+            currentPageName="Dashboard"
+            currentPageDescription="Welcome to your admin dashboard"
+          />
           <main className="p-6 space-y-8">
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-fitness-red to-red-600 rounded-lg p-6 shadow-2xl">
