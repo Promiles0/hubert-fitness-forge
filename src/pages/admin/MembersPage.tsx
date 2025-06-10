@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Search, 
@@ -8,9 +9,11 @@ import {
   Trash2, 
   Calendar, 
   Shield, 
-  Loader2
+  Loader2,
+  UserX,
+  UserCheck
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,14 +64,19 @@ interface Member {
   status: string;
   join_date: string;
   expiry_date: string | null;
+  is_blocked: boolean;
+  user_id: string | null;
   membership_plan: {
     name: string;
   } | null;
   trainer: {
     first_name: string;
     last_name: string;
-  } | null | { error: true } & String; // Updated to handle potential error types
+  } | null;
   gender: string | null;
+  profile?: {
+    avatar?: string;
+  };
 }
 
 const MembersPage = () => {
@@ -78,8 +87,9 @@ const MembersPage = () => {
   const [trainerFilter, setTrainerFilter] = useState<string | null>(null);
   
   const { hasRole } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Fetch members with their membership plans and trainers
+  // Fetch members with their membership plans, trainers, and profiles
   const { data: members, isLoading, error, refetch } = useQuery({
     queryKey: ['members'],
     queryFn: async () => {
@@ -95,12 +105,32 @@ const MembersPage = () => {
           join_date, 
           expiry_date, 
           gender,
+          is_blocked,
+          user_id,
           membership_plan: membership_plan_id (name),
           trainer: assigned_trainer_id (first_name, last_name)
         `);
       
       if (error) throw error;
-      return data as unknown as Member[]; // Cast to unknown first, then to Member[]
+
+      // Fetch profiles for avatars
+      const userIds = data.filter(m => m.user_id).map(m => m.user_id);
+      let profiles = [];
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, avatar')
+          .in('id', userIds);
+        profiles = profilesData || [];
+      }
+
+      // Combine member data with profiles
+      const enrichedMembers = data.map(member => ({
+        ...member,
+        profile: profiles.find(p => p.id === member.user_id)
+      }));
+
+      return enrichedMembers as Member[];
     },
   });
 
@@ -130,6 +160,58 @@ const MembersPage = () => {
     },
   });
 
+  // Block/Unblock user mutation
+  const blockUserMutation = useMutation({
+    mutationFn: async ({ memberId, block }: { memberId: string; block: boolean }) => {
+      const { error } = await supabase
+        .from('members')
+        .update({ is_blocked: block })
+        .eq('id', memberId);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, { block }) => {
+      toast({
+        title: "Success",
+        description: `User ${block ? 'blocked' : 'unblocked'} successfully`,
+      });
+      refetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update user status: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', memberId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+      refetch();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete user: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Apply filters and search
   const filteredMembers = members?.filter(member => {
     const searchMatch = 
@@ -144,49 +226,22 @@ const MembersPage = () => {
     const planMatch = planFilter === null || planFilter === "all" || 
       (member.membership_plan && member.membership_plan.name === planFilter);
     
-    // Safely check trainer match, accounting for potential error cases
     const trainerMatch = trainerFilter === null || trainerFilter === "all" || 
       (member.trainer && 
-       !('error' in member.trainer) && 
        `${member.trainer.first_name} ${member.trainer.last_name}` === trainerFilter);
     
     return searchMatch && statusMatch && genderMatch && planMatch && trainerMatch;
   });
 
   // Status badge color mapping
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, isBlocked: boolean) => {
+    if (isBlocked) return 'bg-red-500 hover:bg-red-600';
     switch (status) {
       case 'active': return 'bg-green-500 hover:bg-green-600';
       case 'suspended': return 'bg-yellow-500 hover:bg-yellow-600';
       case 'expired': return 'bg-red-500 hover:bg-red-600';
       case 'pending': return 'bg-blue-500 hover:bg-blue-600';
       default: return 'bg-gray-500 hover:bg-gray-600';
-    }
-  };
-
-  // Handle member deletion
-  const handleDeleteMember = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Member deleted",
-        description: "Member has been successfully deleted",
-      });
-      
-      refetch();
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to delete member",
-        variant: "destructive",
-      });
-      console.error(err);
     }
   };
 
@@ -217,14 +272,50 @@ const MembersPage = () => {
     <div className="space-y-6">
       {/* Members Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white">Members Management</h2>
+        <h2 className="text-xl font-semibold text-white">User Management</h2>
         
         <Button 
           className="bg-fitness-red hover:bg-red-700"
         >
           <UserPlus className="mr-2 h-4 w-4" />
-          Add New Member
+          Add New User
         </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-fitness-darkGray border-gray-800">
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-green-500">
+              {members?.filter(m => m.status === 'active' && !m.is_blocked).length || 0}
+            </div>
+            <p className="text-sm text-gray-400">Active Users</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-fitness-darkGray border-gray-800">
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-blue-500">
+              {members?.length || 0}
+            </div>
+            <p className="text-sm text-gray-400">Total Users</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-fitness-darkGray border-gray-800">
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-red-500">
+              {members?.filter(m => m.is_blocked).length || 0}
+            </div>
+            <p className="text-sm text-gray-400">Blocked Users</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-fitness-darkGray border-gray-800">
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-orange-500">
+              {members?.filter(m => m.trainer).length || 0}
+            </div>
+            <p className="text-sm text-gray-400">With Trainers</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filter */}
@@ -297,26 +388,6 @@ const MembersPage = () => {
                 <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Select
-              value={trainerFilter || ""}
-              onValueChange={(value) => setTrainerFilter(value === "" ? null : value)}
-            >
-              <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
-                <SelectValue placeholder="Assigned Trainer" />
-              </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="all">All Trainers</SelectItem>
-                {trainers?.map(trainer => (
-                  <SelectItem 
-                    key={trainer.id} 
-                    value={`${trainer.first_name} ${trainer.last_name}`}
-                  >
-                    {trainer.first_name} {trainer.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardContent>
       </Card>
@@ -327,19 +398,18 @@ const MembersPage = () => {
           {isLoading ? (
             <div className="flex justify-center items-center p-8">
               <Loader2 className="h-8 w-8 animate-spin text-fitness-red" />
-              <span className="ml-2 text-white">Loading members...</span>
+              <span className="ml-2 text-white">Loading users...</span>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-fitness-black">
                   <TableRow className="border-b border-gray-800 hover:bg-fitness-black/70">
-                    <TableHead className="text-white">Name</TableHead>
+                    <TableHead className="text-white">User</TableHead>
                     <TableHead className="text-white">Email</TableHead>
                     <TableHead className="text-white">Plan</TableHead>
                     <TableHead className="text-white">Status</TableHead>
                     <TableHead className="text-white">Join Date</TableHead>
-                    <TableHead className="text-white">Expiry Date</TableHead>
                     <TableHead className="text-white">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -348,22 +418,30 @@ const MembersPage = () => {
                     filteredMembers.map((member) => (
                       <TableRow key={member.id} className="border-b border-gray-800 hover:bg-fitness-black/30">
                         <TableCell className="text-white font-medium">
-                          {member.first_name} {member.last_name}
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage src={member.profile?.avatar} />
+                              <AvatarFallback className="bg-fitness-red text-white">
+                                {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{member.first_name} {member.last_name}</div>
+                              <div className="text-sm text-gray-400">ID: {member.id.slice(0, 8)}</div>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="text-gray-300">{member.email}</TableCell>
                         <TableCell className="text-gray-300">
                           {member.membership_plan?.name || "No Plan"}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(member.status)}>
-                            {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
+                          <Badge className={getStatusColor(member.status, member.is_blocked)}>
+                            {member.is_blocked ? 'Blocked' : member.status.charAt(0).toUpperCase() + member.status.slice(1)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-gray-300">
                           {member.join_date ? format(new Date(member.join_date), 'MMM dd, yyyy') : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {member.expiry_date ? format(new Date(member.expiry_date), 'MMM dd, yyyy') : 'N/A'}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -386,9 +464,25 @@ const MembersPage = () => {
                                 <Edit className="mr-2 h-4 w-4" />
                                 <span>Edit Info</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-white hover:bg-fitness-darkGray cursor-pointer">
-                                <Calendar className="mr-2 h-4 w-4" />
-                                <span>View Attendance</span>
+                              <DropdownMenuSeparator className="bg-gray-700" />
+                              <DropdownMenuItem 
+                                className="text-white hover:bg-fitness-darkGray cursor-pointer"
+                                onClick={() => blockUserMutation.mutate({ 
+                                  memberId: member.id, 
+                                  block: !member.is_blocked 
+                                })}
+                              >
+                                {member.is_blocked ? (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    <span>Unblock User</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    <span>Block User</span>
+                                  </>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-gray-700" />
                               <Dialog>
@@ -398,14 +492,14 @@ const MembersPage = () => {
                                     onSelect={(e) => e.preventDefault()}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete Member</span>
+                                    <span>Delete User</span>
                                   </DropdownMenuItem>
                                 </DialogTrigger>
                                 <DialogContent className="bg-fitness-black border-gray-700 text-white">
                                   <DialogHeader>
-                                    <DialogTitle className="text-white">Delete Member</DialogTitle>
+                                    <DialogTitle className="text-white">Delete User</DialogTitle>
                                     <DialogDescription className="text-gray-400">
-                                      Are you sure you want to delete {member.first_name} {member.last_name}'s account? This action cannot be undone.
+                                      Are you sure you want to permanently delete {member.first_name} {member.last_name}'s account? This action cannot be undone.
                                     </DialogDescription>
                                   </DialogHeader>
                                   <DialogFooter>
@@ -418,7 +512,7 @@ const MembersPage = () => {
                                     </Button>
                                     <Button 
                                       className="bg-red-600 hover:bg-red-700 text-white"
-                                      onClick={() => handleDeleteMember(member.id)}
+                                      onClick={() => deleteUserMutation.mutate(member.id)}
                                     >
                                       Delete
                                     </Button>
@@ -432,8 +526,8 @@ const MembersPage = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-white">
-                        No members found.
+                      <TableCell colSpan={6} className="h-24 text-center text-white">
+                        No users found.
                       </TableCell>
                     </TableRow>
                   )}

@@ -20,7 +20,7 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
-  const { login, hasRole } = useAuth();
+  const { login, user } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -31,6 +31,13 @@ const LoginPage = () => {
       setRememberMe(true);
     }
   }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,10 +56,11 @@ const LoginPage = () => {
         localStorage.removeItem("rememberedEmail");
       }
 
-      // Use the AuthContext login function which handles role-based redirection
-      await login(email, password);
+      const { error } = await login(email, password);
       
-      // Navigation is handled by the login function in AuthContext
+      if (error) {
+        toast.error(error.message);
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

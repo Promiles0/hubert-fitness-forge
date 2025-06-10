@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -97,10 +98,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    if (!error && data.user) {
+      // Check user role and redirect accordingly
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+      
+      if (roles && roles.some(r => r.role === 'admin')) {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/dashboard';
+      }
+    }
+    
     return { error };
   };
 
@@ -117,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    window.location.href = '/';
   };
 
   const hasRole = (role: string) => {

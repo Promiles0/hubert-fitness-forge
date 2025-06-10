@@ -3,38 +3,35 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Mail, Phone, Star } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import AddTrainerDialog from "@/components/admin/AddTrainerDialog";
+import EditTrainerDialog from "@/components/admin/EditTrainerDialog";
 
-type TrainerSpecialty = "yoga" | "hiit" | "cardio" | "strength" | "pilates" | "crossfit" | "nutrition" | "rehabilitation";
+interface Trainer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+  hourly_rate?: number;
+  photo_url?: string;
+  specialties: string[];
+  is_active: boolean;
+  experience_years?: number;
+}
 
 const TrainersManagementPage = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
   const queryClient = useQueryClient();
-
-  const [newTrainer, setNewTrainer] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    bio: "",
-    specialties: [] as TrainerSpecialty[],
-    experience_years: 0,
-    hourly_rate: 0,
-    photo_url: "",
-    is_active: true,
-    certifications: [] as string[],
-    availability: {}
-  });
 
   const { data: trainers, isLoading } = useQuery({
     queryKey: ['trainers'],
@@ -45,47 +42,8 @@ const TrainersManagementPage = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as Trainer[];
     },
-  });
-
-  const addTrainerMutation = useMutation({
-    mutationFn: async (trainerData: typeof newTrainer) => {
-      const { error } = await supabase
-        .from('trainers')
-        .insert([trainerData]);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainers'] });
-      toast({
-        title: "Success",
-        description: "Trainer added successfully",
-      });
-      setIsAddDialogOpen(false);
-      setNewTrainer({
-        first_name: "",
-        last_name: "",
-        email: "",
-        phone: "",
-        bio: "",
-        specialties: [],
-        experience_years: 0,
-        hourly_rate: 0,
-        photo_url: "",
-        is_active: true,
-        certifications: [],
-        availability: {}
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to add trainer: " + error.message,
-        variant: "destructive",
-      });
-    }
   });
 
   const deleteTrainerMutation = useMutation({
@@ -113,31 +71,10 @@ const TrainersManagementPage = () => {
     }
   });
 
-  const handleAddTrainer = async () => {
-    if (!newTrainer.first_name || !newTrainer.last_name || !newTrainer.email) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    addTrainerMutation.mutate(newTrainer);
+  const handleEditTrainer = (trainer: Trainer) => {
+    setSelectedTrainer(trainer);
+    setIsEditDialogOpen(true);
   };
-
-  const handleSpecialtyChange = (specialty: TrainerSpecialty, checked: boolean) => {
-    setNewTrainer(prev => ({
-      ...prev,
-      specialties: checked 
-        ? [...prev.specialties, specialty]
-        : prev.specialties.filter(s => s !== specialty)
-    }));
-  };
-
-  const availableSpecialties: TrainerSpecialty[] = [
-    "yoga", "hiit", "cardio", "strength", "pilates", "crossfit", "nutrition", "rehabilitation"
-  ];
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -152,126 +89,10 @@ const TrainersManagementPage = () => {
             Manage your fitness trainers and instructors
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-fitness-red hover:bg-red-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Trainer
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Trainer</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">First Name *</Label>
-                <Input
-                  id="first_name"
-                  value={newTrainer.first_name}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, first_name: e.target.value })}
-                  placeholder="Enter first name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Last Name *</Label>
-                <Input
-                  id="last_name"
-                  value={newTrainer.last_name}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, last_name: e.target.value })}
-                  placeholder="Enter last name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newTrainer.email}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, email: e.target.value })}
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newTrainer.phone}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="experience_years">Experience (Years)</Label>
-                <Input
-                  id="experience_years"
-                  type="number"
-                  value={newTrainer.experience_years}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, experience_years: parseInt(e.target.value) || 0 })}
-                  placeholder="Years of experience"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
-                <Input
-                  id="hourly_rate"
-                  type="number"
-                  value={newTrainer.hourly_rate}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, hourly_rate: parseFloat(e.target.value) || 0 })}
-                  placeholder="Hourly rate"
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="photo_url">Profile Photo URL</Label>
-                <Input
-                  id="photo_url"
-                  value={newTrainer.photo_url}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, photo_url: e.target.value })}
-                  placeholder="Enter photo URL"
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={newTrainer.bio}
-                  onChange={(e) => setNewTrainer({ ...newTrainer, bio: e.target.value })}
-                  placeholder="Enter trainer bio and background"
-                  rows={3}
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Specialties</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableSpecialties.map((specialty) => (
-                    <div key={specialty} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={specialty}
-                        checked={newTrainer.specialties.includes(specialty)}
-                        onCheckedChange={(checked) => handleSpecialtyChange(specialty, !!checked)}
-                      />
-                      <Label htmlFor={specialty} className="capitalize">
-                        {specialty}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="col-span-2 flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAddTrainer}
-                  disabled={addTrainerMutation.isPending}
-                  className="bg-fitness-red hover:bg-red-700"
-                >
-                  {addTrainerMutation.isPending ? "Adding..." : "Add Trainer"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="bg-fitness-red hover:bg-red-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Trainer
+        </Button>
       </div>
 
       {/* Trainers Grid */}
@@ -304,10 +125,12 @@ const TrainersManagementPage = () => {
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     {trainer.first_name} {trainer.last_name}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    <Star className="h-4 w-4" />
-                    {trainer.experience_years} years experience
-                  </div>
+                  {trainer.experience_years && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <Star className="h-4 w-4" />
+                      {trainer.experience_years} years experience
+                    </div>
+                  )}
                 </div>
 
                 {trainer.bio && (
@@ -333,7 +156,7 @@ const TrainersManagementPage = () => {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Specialties</Label>
                     <div className="flex flex-wrap gap-1">
-                      {(trainer.specialties as string[]).map((specialty, index) => (
+                      {trainer.specialties.map((specialty, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           {specialty}
                         </Badge>
@@ -354,7 +177,11 @@ const TrainersManagementPage = () => {
                   </Badge>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditTrainer(trainer)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button 
@@ -393,6 +220,17 @@ const TrainersManagementPage = () => {
           </Button>
         </div>
       )}
+
+      <AddTrainerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+      />
+
+      <EditTrainerDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        trainer={selectedTrainer}
+      />
     </div>
   );
 };
