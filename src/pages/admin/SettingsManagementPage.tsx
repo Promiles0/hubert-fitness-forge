@@ -6,11 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import SystemSettingsManager from "@/components/admin/SystemSettingsManager";
-import { Search, Settings, Users, Shield, Building2, Database } from "lucide-react";
+import { Search, Settings, Users, Shield } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -65,205 +63,156 @@ const SettingsManagementPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings & Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage system settings, user roles, and configuration options
+          Manage system settings and user roles
         </p>
       </div>
 
-      <Tabs defaultValue="system" className="w-full">
-        <TabsList className="bg-fitness-darkGray border border-gray-800 text-gray-400">
-          <TabsTrigger value="system" className="data-[state=active]:bg-fitness-red data-[state=active]:text-white">
-            <Settings className="mr-2 h-4 w-4" />
-            System Settings
-          </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-fitness-red data-[state=active]:text-white">
-            <Users className="mr-2 h-4 w-4" />
-            Users & Roles
-          </TabsTrigger>
-          <TabsTrigger value="business" className="data-[state=active]:bg-fitness-red data-[state=active]:text-white">
-            <Building2 className="mr-2 h-4 w-4" />
-            Business Config
-          </TabsTrigger>
-          <TabsTrigger value="backup" className="data-[state=active]:bg-fitness-red data-[state=active]:text-white">
-            <Database className="mr-2 h-4 w-4" />
-            Data Management
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="system" className="mt-6">
-          <SystemSettingsManager />
-        </TabsContent>
-
-        <TabsContent value="users" className="mt-6">
-          {/* Settings Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-                    <p className="text-2xl font-bold text-blue-600">{users?.length || 0}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admin Users</p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {users?.filter(u => u.user_roles?.some((r: any) => r.role === 'admin')).length || 0}
-                    </p>
-                  </div>
-                  <Shield className="h-8 w-8 text-red-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">System Status</p>
-                    <p className="text-2xl font-bold text-green-600">Active</p>
-                  </div>
-                  <Settings className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Users & Roles */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Users & Roles Management</CardTitle>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 max-w-sm"
-                />
+      {/* Settings Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+                <p className="text-2xl font-bold text-blue-600">{users?.length || 0}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users?.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={user.avatar || undefined} />
-                            <AvatarFallback>
-                              {user.name?.charAt(0) || user.username?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {user.name || 'No name'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {user.id.slice(0, 8)}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm">
-                          {user.username || 'No username'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {user.phone && (
-                            <div>📞 {user.phone}</div>
-                          )}
-                          {!user.phone && (
-                            <span className="text-gray-500">No contact info</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.user_roles && user.user_roles.length > 0 ? (
-                            user.user_roles.map((roleObj: any, index: number) => (
-                              <Badge 
-                                key={index}
-                                className={
-                                  roleObj.role === 'admin' ? 'bg-red-100 text-red-800' :
-                                  roleObj.role === 'moderator' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }
-                              >
-                                {roleObj.role}
-                              </Badge>
-                            ))
-                          ) : (
-                            <Badge variant="outline">member</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-500">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            Edit Roles
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="business" className="mt-6">
-          <Card className="bg-fitness-darkGray border-gray-800 text-white">
-            <CardHeader>
-              <CardTitle>Business Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-400">Advanced business configuration options will be available here.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admin Users</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {users?.filter(u => u.user_roles?.some((r: any) => r.role === 'admin')).length || 0}
+                </p>
+              </div>
+              <Shield className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="backup" className="mt-6">
-          <Card className="bg-fitness-darkGray border-gray-800 text-white">
-            <CardHeader>
-              <CardTitle>Data Management & Backup</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-400">Data backup and restore functionality will be available here.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">System Status</p>
+                <p className="text-2xl font-bold text-green-600">Active</p>
+              </div>
+              <Settings className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users & Roles */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users & Roles</CardTitle>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 max-w-sm"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Roles</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users?.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={user.avatar || undefined} />
+                        <AvatarFallback>
+                          {user.name?.charAt(0) || user.username?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">
+                          {user.name || 'No name'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          ID: {user.id.slice(0, 8)}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-sm">
+                      {user.username || 'No username'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {user.phone && (
+                        <div>📞 {user.phone}</div>
+                      )}
+                      {!user.phone && (
+                        <span className="text-gray-500">No contact info</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {user.user_roles && user.user_roles.length > 0 ? (
+                        user.user_roles.map((roleObj: any, index: number) => (
+                          <Badge 
+                            key={index}
+                            className={
+                              roleObj.role === 'admin' ? 'bg-red-100 text-red-800' :
+                              roleObj.role === 'moderator' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {roleObj.role}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="outline">member</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-500">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm">
+                        Edit Roles
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        View Details
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,12 +1,11 @@
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "@/hooks/use-toast";
 import { 
   Search,
   Plus,
@@ -15,9 +14,7 @@ import {
   Mail,
   Phone,
   Calendar,
-  User,
-  Shield,
-  UserX
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -29,32 +26,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const MembersManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const queryClient = useQueryClient();
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['admin-members', searchTerm],
     queryFn: async () => {
-      // Get members with related data
+      // First get members
       let membersQuery = supabase
         .from('members')
-        .select(`
-          *,
-          membership_plans(id, name, plan_type)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
@@ -64,83 +46,37 @@ const MembersManagementPage = () => {
       const { data: membersData, error: membersError } = await membersQuery;
       if (membersError) throw membersError;
 
-      // Get profiles for avatars
-      const userIds = membersData?.map(m => m.user_id).filter(Boolean) || [];
+      // Get all profiles for avatars
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, avatar')
-        .in('id', userIds);
+        .select('id, avatar');
 
-      // Get trainers data separately
-      const trainerIds = membersData?.map(m => m.assigned_trainer_id).filter(Boolean) || [];
+      // Get all membership plans
+      const { data: plansData } = await supabase
+        .from('membership_plans')
+        .select('id, name, plan_type');
+
+      // Get all trainers
       const { data: trainersData } = await supabase
         .from('trainers')
-        .select('id, first_name, last_name')
-        .in('id', trainerIds);
+        .select('id, first_name, last_name');
 
       // Combine the data
       const enrichedMembers = membersData?.map(member => {
         const profile = profilesData?.find(p => p.id === member.user_id);
+        const plan = plansData?.find(p => p.id === member.membership_plan_id);
         const trainer = trainersData?.find(t => t.id === member.assigned_trainer_id);
+
         return {
           ...member,
           profile,
+          membership_plan: plan,
           trainer
         };
       });
 
       return enrichedMembers;
     },
-  });
-
-  const blockMemberMutation = useMutation({
-    mutationFn: async ({ memberId, block }: { memberId: string; block: boolean }) => {
-      const { error } = await supabase
-        .from('members')
-        .update({ is_blocked: block })
-        .eq('id', memberId);
-      
-      if (error) throw error;
-    },
-    onSuccess: (_, { block }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
-      toast({
-        title: block ? "Member Blocked" : "Member Unblocked",
-        description: `Member has been ${block ? 'blocked' : 'unblocked'} successfully.`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update member status.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const deleteMemberMutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', memberId);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-members'] });
-      toast({
-        title: "Member Deleted",
-        description: "Member has been permanently deleted.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete member.",
-        variant: "destructive",
-      });
-    }
   });
 
   if (isLoading) {
@@ -152,9 +88,9 @@ const MembersManagementPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Members Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Members</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage member profiles, memberships, and user accounts
+            Manage member profiles and memberships
           </p>
         </div>
         <Button className="bg-fitness-red hover:bg-red-700">
@@ -168,7 +104,7 @@ const MembersManagementPage = () => {
         <Card>
           <CardContent className="p-6">
             <div className="text-2xl font-bold text-green-600">
-              {members?.filter(m => m.status === 'active' && !m.is_blocked).length || 0}
+              {members?.filter(m => m.status === 'active').length || 0}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">Active Members</p>
           </CardContent>
@@ -183,10 +119,10 @@ const MembersManagementPage = () => {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold text-red-600">
-              {members?.filter(m => m.is_blocked).length || 0}
+            <div className="text-2xl font-bold text-purple-600">
+              {members?.filter(m => m.status === 'pending').length || 0}
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Blocked</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
           </CardContent>
         </Card>
         <Card>
@@ -205,7 +141,7 @@ const MembersManagementPage = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search members by name or email..."
+              placeholder="Search members..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -234,7 +170,7 @@ const MembersManagementPage = () => {
             </TableHeader>
             <TableBody>
               {members?.map((member) => (
-                <TableRow key={member.id} className={member.is_blocked ? 'opacity-60' : ''}>
+                <TableRow key={member.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
@@ -244,17 +180,11 @@ const MembersManagementPage = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium flex items-center gap-2">
+                        <div className="font-medium">
                           {member.first_name} {member.last_name}
-                          {member.is_blocked && (
-                            <Badge variant="destructive" className="text-xs">
-                              <UserX className="h-3 w-3 mr-1" />
-                              Blocked
-                            </Badge>
-                          )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          ID: {member.id.slice(0, 8)}
+                          Member ID: {member.id.slice(0, 8)}
                         </div>
                       </div>
                     </div>
@@ -274,10 +204,10 @@ const MembersManagementPage = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {member.membership_plans ? (
+                    {member.membership_plan ? (
                       <div>
-                        <div className="font-medium">{member.membership_plans.name}</div>
-                        <Badge variant="outline">{member.membership_plans.plan_type}</Badge>
+                        <div className="font-medium">{member.membership_plan.name}</div>
+                        <Badge variant="outline">{member.membership_plan.plan_type}</Badge>
                       </div>
                     ) : (
                       <span className="text-gray-500">No plan</span>
@@ -296,13 +226,12 @@ const MembersManagementPage = () => {
                   <TableCell>
                     <Badge 
                       className={
-                        member.status === 'active' && !member.is_blocked ? 'bg-green-100 text-green-800' :
+                        member.status === 'active' ? 'bg-green-100 text-green-800' :
                         member.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        member.is_blocked ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                        'bg-red-100 text-red-800'
                       }
                     >
-                      {member.is_blocked ? 'blocked' : member.status}
+                      {member.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -316,56 +245,15 @@ const MembersManagementPage = () => {
                       <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => blockMemberMutation.mutate({ 
-                          memberId: member.id, 
-                          block: !member.is_blocked 
-                        })}
-                        disabled={blockMemberMutation.isPending}
-                      >
-                        {member.is_blocked ? <Shield className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Member</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to permanently delete {member.first_name} {member.last_name}? 
-                              This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMemberMutation.mutate(member.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-          
-          {members?.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No members found.</p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
