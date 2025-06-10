@@ -10,6 +10,7 @@ interface Profile {
   username?: string;
   avatar?: string;
   phone?: string;
+  fitness_goals?: string;
   created_at: string;
   updated_at: string;
 }
