@@ -8,40 +8,55 @@ const TrainersPage = () => {
   const { data: trainers, isLoading, error } = useQuery({
     queryKey: ['trainers'],
     queryFn: async () => {
-      console.log('Fetching trainers...');
+      console.log('Fetching trainers from Supabase...');
       const { data, error } = await supabase
         .from('trainers')
         .select('*')
         .eq('is_active', true)
-        .order('created_at');
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching trainers:', error);
         throw error;
       }
       
-      console.log('Trainers fetched:', data);
+      console.log('Trainers fetched successfully:', data);
       return data;
     },
   });
 
-  console.log('TrainersPage render - trainers:', trainers, 'isLoading:', isLoading, 'error:', error);
+  console.log('TrainersPage render state:', { 
+    trainers, 
+    isLoading, 
+    error,
+    trainersCount: trainers?.length || 0
+  });
 
   if (isLoading) {
-    return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
+    return (
+      <div className="min-h-screen bg-fitness-black text-white flex items-center justify-center">
+        <LoadingSpinner size={40} className="flex items-center justify-center" />
+      </div>
+    );
   }
 
   if (error) {
-    console.error('Query error:', error);
+    console.error('TrainersPage error:', error);
     return (
       <div className="min-h-screen bg-fitness-black text-white flex items-center justify-center">
         <div className="text-center">
           <h3 className="text-xl font-semibold text-gray-400 mb-2">
             Error Loading Trainers
           </h3>
-          <p className="text-gray-500">
-            Please try refreshing the page
+          <p className="text-gray-500 mb-4">
+            {error instanceof Error ? error.message : 'Please try refreshing the page'}
           </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-fitness-red hover:bg-red-700 text-white px-4 py-2 rounded"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     );
@@ -57,24 +72,51 @@ const TrainersPage = () => {
           </p>
         </div>
 
+        {/* Debug info - remove in production */}
+        <div className="mb-8 p-4 bg-gray-800 rounded-lg">
+          <h3 className="text-sm font-semibold mb-2">Debug Info:</h3>
+          <p className="text-xs text-gray-300">
+            Trainers loaded: {trainers?.length || 0} | 
+            Loading: {isLoading ? 'Yes' : 'No'} | 
+            Error: {error ? 'Yes' : 'No'}
+          </p>
+          {trainers && trainers.length > 0 && (
+            <p className="text-xs text-gray-300 mt-1">
+              Sample trainer: {trainers[0].first_name} {trainers[0].last_name}
+            </p>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {trainers && trainers.length > 0 ? (
-            trainers.map((trainer) => (
-              <TrainerCard
-                key={trainer.id}
-                name={`${trainer.first_name} ${trainer.last_name}`}
-                role={trainer.specialties.join(', ')}
-                image={trainer.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${trainer.first_name}${trainer.last_name}`}
-                bio={trainer.bio || 'Professional fitness trainer dedicated to helping you reach your goals.'}
-              />
-            ))
+            trainers.map((trainer) => {
+              const fullName = `${trainer.first_name} ${trainer.last_name}`;
+              const specialtiesString = Array.isArray(trainer.specialties) 
+                ? trainer.specialties.join(', ') 
+                : 'General Fitness';
+              const trainerImage = trainer.photo_url || 
+                `https://api.dicebear.com/7.x/initials/svg?seed=${trainer.first_name}${trainer.last_name}`;
+              const trainerBio = trainer.bio || 
+                'Professional fitness trainer dedicated to helping you reach your goals.';
+
+              return (
+                <TrainerCard
+                  key={trainer.id}
+                  name={fullName}
+                  role={specialtiesString}
+                  image={trainerImage}
+                  bio={trainerBio}
+                  socialMedia={trainer.social_links as any}
+                />
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12">
               <h3 className="text-xl font-semibold text-gray-400 mb-2">
                 No Trainers Available
               </h3>
               <p className="text-gray-500">
-                Check back soon for our amazing team of trainers!
+                We're currently updating our trainer profiles. Check back soon!
               </p>
             </div>
           )}
