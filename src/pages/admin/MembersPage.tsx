@@ -1,58 +1,14 @@
-import { useState, useEffect } from "react";
-import { 
-  Search, 
-  UserPlus, 
-  Filter, 
-  FileText, 
-  Edit, 
-  Trash2, 
-  Calendar, 
-  Shield, 
-  Loader2,
-  UserX,
-  UserCheck
-} from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { useState } from "react";
+import { UserPlus, Shield } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { useAuth } from "@/contexts/AuthContext";
+import { MembersStatsCards } from "@/components/admin/MembersStatsCards";
+import { MembersSearchFilters } from "@/components/admin/MembersSearchFilters";
+import { MembersTable } from "@/components/admin/MembersTable";
 
 interface Member {
   id: string;
@@ -84,9 +40,6 @@ const MembersPage = () => {
   const [planFilter, setPlanFilter] = useState<string | null>(null);
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
   const [trainerFilter, setTrainerFilter] = useState<string | null>(null);
-  
-  const { hasRole } = useAuth();
-  const queryClient = useQueryClient();
 
   // Fetch members with their membership plans, trainers, and profiles
   const { data: members, isLoading, error, refetch } = useQuery({
@@ -170,19 +123,6 @@ const MembersPage = () => {
     },
   });
 
-  // Fetch trainers for filter dropdown
-  const { data: trainers } = useQuery({
-    queryKey: ['trainers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('trainers')
-        .select('id, first_name, last_name');
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
   // Block/Unblock user mutation
   const blockUserMutation = useMutation({
     mutationFn: async ({ memberId, block }: { memberId: string; block: boolean }) => {
@@ -256,16 +196,12 @@ const MembersPage = () => {
     return searchMatch && statusMatch && genderMatch && planMatch && trainerMatch;
   });
 
-  // Status badge color mapping
-  const getStatusColor = (status: string, isBlocked: boolean) => {
-    if (isBlocked) return 'bg-red-500 hover:bg-red-600';
-    switch (status) {
-      case 'active': return 'bg-green-500 hover:bg-green-600';
-      case 'suspended': return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'expired': return 'bg-red-500 hover:bg-red-600';
-      case 'pending': return 'bg-blue-500 hover:bg-blue-600';
-      default: return 'bg-gray-500 hover:bg-gray-600';
-    }
+  const handleBlockToggle = (memberId: string, block: boolean) => {
+    blockUserMutation.mutate({ memberId, block });
+  };
+
+  const handleDelete = (memberId: string) => {
+    deleteUserMutation.mutate(memberId);
   };
 
   if (error) {
@@ -297,269 +233,35 @@ const MembersPage = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-white">User Management</h2>
         
-        <Button 
-          className="bg-fitness-red hover:bg-red-700"
-        >
+        <Button className="bg-fitness-red hover:bg-red-700">
           <UserPlus className="mr-2 h-4 w-4" />
           Add New User
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-fitness-darkGray border-gray-800">
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-green-500">
-              {members?.filter(m => m.status === 'active' && !m.is_blocked).length || 0}
-            </div>
-            <p className="text-sm text-gray-400">Active Users</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-fitness-darkGray border-gray-800">
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-blue-500">
-              {members?.length || 0}
-            </div>
-            <p className="text-sm text-gray-400">Total Users</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-fitness-darkGray border-gray-800">
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-red-500">
-              {members?.filter(m => m.is_blocked).length || 0}
-            </div>
-            <p className="text-sm text-gray-400">Blocked Users</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-fitness-darkGray border-gray-800">
-          <CardContent className="p-6">
-            <div className="text-2xl font-bold text-orange-500">
-              {members?.filter(m => m.trainer).length || 0}
-            </div>
-            <p className="text-sm text-gray-400">With Trainers</p>
-          </CardContent>
-        </Card>
-      </div>
+      <MembersStatsCards members={members} />
 
       {/* Search and Filter */}
-      <Card className="bg-fitness-darkGray border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white text-lg">
-            <Filter className="inline mr-2 h-5 w-5" /> 
-            Search & Filter
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Search by name, email or phone..."
-                  className="bg-fitness-black border-gray-700 pl-10 text-white"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <Select
-              value={statusFilter || ""}
-              onValueChange={(value) => setStatusFilter(value === "" ? null : value)}
-            >
-              <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={planFilter || ""}
-              onValueChange={(value) => setPlanFilter(value === "" ? null : value)}
-            >
-              <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
-                <SelectValue placeholder="Membership Plan" />
-              </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="all">All Plans</SelectItem>
-                {membershipPlans?.map(plan => (
-                  <SelectItem key={plan.id} value={plan.name}>
-                    {plan.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={genderFilter || ""}
-              onValueChange={(value) => setGenderFilter(value === "" ? null : value)}
-            >
-              <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
-                <SelectValue placeholder="Gender" />
-              </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
-                <SelectItem value="all">All Genders</SelectItem>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <MembersSearchFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        planFilter={planFilter}
+        setPlanFilter={setPlanFilter}
+        genderFilter={genderFilter}
+        setGenderFilter={setGenderFilter}
+        membershipPlans={membershipPlans}
+      />
 
       {/* Members Table */}
-      <Card className="bg-fitness-darkGray border-gray-800">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center items-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-fitness-red" />
-              <span className="ml-2 text-white">Loading users...</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-fitness-black">
-                  <TableRow className="border-b border-gray-800 hover:bg-fitness-black/70">
-                    <TableHead className="text-white">User</TableHead>
-                    <TableHead className="text-white">Email</TableHead>
-                    <TableHead className="text-white">Plan</TableHead>
-                    <TableHead className="text-white">Status</TableHead>
-                    <TableHead className="text-white">Join Date</TableHead>
-                    <TableHead className="text-white">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMembers && filteredMembers.length > 0 ? (
-                    filteredMembers.map((member) => (
-                      <TableRow key={member.id} className="border-b border-gray-800 hover:bg-fitness-black/30">
-                        <TableCell className="text-white font-medium">
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={member.profile?.avatar} />
-                              <AvatarFallback className="bg-fitness-red text-white">
-                                {member.first_name.charAt(0)}{member.last_name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{member.first_name} {member.last_name}</div>
-                              <div className="text-sm text-gray-400">ID: {member.id.slice(0, 8)}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-300">{member.email}</TableCell>
-                        <TableCell className="text-gray-300">
-                          {member.membership_plan?.name || "No Plan"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(member.status, member.is_blocked)}>
-                            {member.is_blocked ? 'Blocked' : member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {member.join_date ? format(new Date(member.join_date), 'MMM dd, yyyy') : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0 text-white">
-                                <span className="sr-only">Open menu</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                                  <circle cx="12" cy="12" r="1" />
-                                  <circle cx="12" cy="5" r="1" />
-                                  <circle cx="12" cy="19" r="1" />
-                                </svg>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-fitness-black border-gray-700 text-white">
-                              <DropdownMenuItem className="text-white hover:bg-fitness-darkGray cursor-pointer">
-                                <FileText className="mr-2 h-4 w-4" />
-                                <span>View Profile</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-white hover:bg-fitness-darkGray cursor-pointer">
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Edit Info</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-700" />
-                              <DropdownMenuItem 
-                                className="text-white hover:bg-fitness-darkGray cursor-pointer"
-                                onClick={() => blockUserMutation.mutate({ 
-                                  memberId: member.id, 
-                                  block: !member.is_blocked 
-                                })}
-                              >
-                                {member.is_blocked ? (
-                                  <>
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    <span>Unblock User</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserX className="mr-2 h-4 w-4" />
-                                    <span>Block User</span>
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-gray-700" />
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem 
-                                    className="text-red-500 hover:bg-fitness-darkGray cursor-pointer"
-                                    onSelect={(e) => e.preventDefault()}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete User</span>
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="bg-fitness-black border-gray-700 text-white">
-                                  <DialogHeader>
-                                    <DialogTitle className="text-white">Delete User</DialogTitle>
-                                    <DialogDescription className="text-gray-400">
-                                      Are you sure you want to permanently delete {member.first_name} {member.last_name}'s account? This action cannot be undone.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <DialogFooter>
-                                    <Button 
-                                      variant="outline" 
-                                      className="border-gray-700 text-white hover:bg-gray-800"
-                                      onClick={() => {}}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button 
-                                      className="bg-red-600 hover:bg-red-700 text-white"
-                                      onClick={() => deleteUserMutation.mutate(member.id)}
-                                    >
-                                      Delete
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-white">
-                        No users found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <MembersTable
+        members={filteredMembers}
+        isLoading={isLoading}
+        onBlockToggle={handleBlockToggle}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
