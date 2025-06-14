@@ -8,31 +8,33 @@ const TrainersPage = () => {
   const { data: trainers, isLoading, error } = useQuery({
     queryKey: ['trainers'],
     queryFn: async () => {
-      console.log('Fetching trainers...');
+      console.log('Public TrainersPage: Fetching trainers...');
       const { data, error } = await supabase
         .from('trainers')
         .select('*')
         .eq('is_active', true)
-        .order('created_at');
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching trainers:', error);
+        console.error('Public TrainersPage: Error fetching trainers:', error);
         throw error;
       }
       
-      console.log('Trainers fetched:', data);
+      console.log('Public TrainersPage: Trainers fetched:', data);
+      console.log('Public TrainersPage: Number of active trainers:', data?.length || 0);
       return data;
     },
   });
 
-  console.log('TrainersPage render - trainers:', trainers, 'isLoading:', isLoading, 'error:', error);
+  console.log('Public TrainersPage render:', { trainers, isLoading, error });
 
   if (isLoading) {
+    console.log('Public TrainersPage: Showing loading spinner');
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
   }
 
   if (error) {
-    console.error('Query error:', error);
+    console.error('Public TrainersPage: Query error:', error);
     return (
       <div className="min-h-screen bg-fitness-black text-white flex items-center justify-center">
         <div className="text-center">
@@ -57,17 +59,29 @@ const TrainersPage = () => {
           </p>
         </div>
 
+        {/* Debug Information */}
+        <div className="bg-fitness-darkGray p-4 rounded-lg mb-8 text-sm">
+          <p className="text-white">Public TrainersPage Debug Info:</p>
+          <p className="text-gray-300">- Loading: {isLoading ? 'Yes' : 'No'}</p>
+          <p className="text-gray-300">- Total Active Trainers: {trainers?.length || 0}</p>
+          <p className="text-gray-300">- Has Error: {error ? 'Yes' : 'No'}</p>
+          <p className="text-gray-300">- Trainers Data: {JSON.stringify(trainers?.map(t => ({ id: t.id, name: `${t.first_name} ${t.last_name}`, active: t.is_active })) || [])}</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {trainers && trainers.length > 0 ? (
-            trainers.map((trainer) => (
-              <TrainerCard
-                key={trainer.id}
-                name={`${trainer.first_name} ${trainer.last_name}`}
-                role={trainer.specialties.join(', ')}
-                image={trainer.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${trainer.first_name}${trainer.last_name}`}
-                bio={trainer.bio || 'Professional fitness trainer dedicated to helping you reach your goals.'}
-              />
-            ))
+            trainers.map((trainer) => {
+              console.log('Rendering trainer:', trainer);
+              return (
+                <TrainerCard
+                  key={trainer.id}
+                  name={`${trainer.first_name} ${trainer.last_name}`}
+                  role={trainer.specialties?.join(', ') || 'Personal Trainer'}
+                  image={trainer.photo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${trainer.first_name}${trainer.last_name}`}
+                  bio={trainer.bio || 'Professional fitness trainer dedicated to helping you reach your goals.'}
+                />
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12">
               <h3 className="text-xl font-semibold text-gray-400 mb-2">
