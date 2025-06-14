@@ -131,6 +131,7 @@ const SignupPage = () => {
                   <Input
                     id="firstName"
                     type="text"
+                    placeholder="Enter your first name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
@@ -145,6 +146,7 @@ const SignupPage = () => {
                   <Input
                     id="lastName"
                     type="text"
+                    placeholder="Enter your last name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
@@ -166,6 +168,7 @@ const SignupPage = () => {
                 <Input
                   id="email"
                   type="email"
+                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600"
@@ -182,6 +185,7 @@ const SignupPage = () => {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600 pr-10"
@@ -227,6 +231,7 @@ const SignupPage = () => {
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="bg-white dark:bg-fitness-dark border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-fitness-red dark:focus:border-fitness-red transition-all duration-300 hover:border-gray-400 dark:hover:border-gray-600 pr-10"

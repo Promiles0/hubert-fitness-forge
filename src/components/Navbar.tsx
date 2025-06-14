@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Menu, X, User, Settings, LogOut, Shield } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, Shield, Dumbbell } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,13 +47,11 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-fitness-red rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">H</span>
-            </div>
-            <span className="text-white font-bold text-xl">
+          <Link to="/" className="flex items-center gap-3">
+            <Dumbbell className="h-8 w-8 text-fitness-red" />
+            <h1 className="text-2xl font-bold text-white">
               <span className="text-fitness-red">HUBERT</span> FITNESS
-            </span>
+            </h1>
           </Link>
 
           {/* Desktop Navigation */}
