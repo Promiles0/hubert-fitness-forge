@@ -106,8 +106,8 @@ const MembersPage = () => {
           gender,
           is_blocked,
           user_id,
-          membership_plan:membership_plan_id(name),
-          trainer:assigned_trainer_id(first_name, last_name)
+          assigned_trainer_id,
+          membership_plan_id
         `);
       
       if (error) throw error;
@@ -123,15 +123,34 @@ const MembersPage = () => {
         profiles = profilesData || [];
       }
 
+      // Fetch membership plans
+      const planIds = data.filter(m => m.membership_plan_id).map(m => m.membership_plan_id);
+      let plans = [];
+      if (planIds.length > 0) {
+        const { data: plansData } = await supabase
+          .from('membership_plans')
+          .select('id, name')
+          .in('id', planIds);
+        plans = plansData || [];
+      }
+
+      // Fetch trainers
+      const trainerIds = data.filter(m => m.assigned_trainer_id).map(m => m.assigned_trainer_id);
+      let trainers = [];
+      if (trainerIds.length > 0) {
+        const { data: trainersData } = await supabase
+          .from('trainers')
+          .select('id, first_name, last_name')
+          .in('id', trainerIds);
+        trainers = trainersData || [];
+      }
+
       // Combine member data with profiles and ensure proper typing
       const enrichedMembers = data.map(member => ({
         ...member,
         profile: profiles.find(p => p.id === member.user_id),
-        membership_plan: member.membership_plan ? { name: member.membership_plan.name } : null,
-        trainer: member.trainer ? { 
-          first_name: member.trainer.first_name, 
-          last_name: member.trainer.last_name 
-        } : null
+        membership_plan: plans.find(p => p.id === member.membership_plan_id) || null,
+        trainer: trainers.find(t => t.id === member.assigned_trainer_id) || null
       }));
 
       return enrichedMembers as Member[];
