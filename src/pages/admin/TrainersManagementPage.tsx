@@ -12,6 +12,9 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Label } from "@/components/ui/label";
 import AddTrainerDialog from "@/components/admin/AddTrainerDialog";
 import EditTrainerDialog from "@/components/admin/EditTrainerDialog";
+import { Database } from "@/integrations/supabase/types";
+
+type TrainerSpecialty = Database["public"]["Enums"]["trainer_specialty"];
 
 interface Trainer {
   id: string;
@@ -22,7 +25,7 @@ interface Trainer {
   bio?: string;
   hourly_rate?: number;
   photo_url?: string;
-  specialties: string[];
+  specialties: TrainerSpecialty[];
   is_active: boolean;
   experience_years?: number;
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Search, 
@@ -107,8 +106,8 @@ const MembersPage = () => {
           gender,
           is_blocked,
           user_id,
-          membership_plan: membership_plan_id (name),
-          trainer: assigned_trainer_id (first_name, last_name)
+          membership_plan:membership_plan_id(name),
+          trainer:assigned_trainer_id(first_name, last_name)
         `);
       
       if (error) throw error;
@@ -124,10 +123,15 @@ const MembersPage = () => {
         profiles = profilesData || [];
       }
 
-      // Combine member data with profiles
+      // Combine member data with profiles and ensure proper typing
       const enrichedMembers = data.map(member => ({
         ...member,
-        profile: profiles.find(p => p.id === member.user_id)
+        profile: profiles.find(p => p.id === member.user_id),
+        membership_plan: member.membership_plan ? { name: member.membership_plan.name } : null,
+        trainer: member.trainer ? { 
+          first_name: member.trainer.first_name, 
+          last_name: member.trainer.last_name 
+        } : null
       }));
 
       return enrichedMembers as Member[];
