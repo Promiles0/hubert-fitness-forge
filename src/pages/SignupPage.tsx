@@ -98,24 +98,24 @@ const SignupPage = () => {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-fitness-dark dark:via-fitness-darkGray dark:to-fitness-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Brand Header */}
         <div className="text-center mb-8 animate-in fade-in duration-1000">
           <Link to="/" className="flex items-center justify-center gap-3 mb-4">
             <Dumbbell className="h-10 w-10 text-fitness-red" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-white">
               <span className="text-fitness-red">HUBERT</span> FITNESS
             </h1>
           </Link>
-          <p className="text-gray-600 dark:text-gray-400">Join the Fitness Revolution</p>
+          <p className="text-gray-400">Join the Fitness Revolution</p>
         </div>
 
-        <Card className="bg-white dark:bg-fitness-darkGray/90 border border-gray-200 dark:border-gray-800 backdrop-blur-sm shadow-xl dark:shadow-2xl animate-in slide-in-from-bottom-4 duration-700">
+        <Card className="bg-fitness-darkGray/90 border-gray-800 backdrop-blur-sm shadow-xl animate-in slide-in-from-bottom-4 duration-700">
           <CardHeader className="space-y-4 text-center">
             <div className="animate-in zoom-in-50 duration-1000 delay-300">
-              <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">Join Hubert Fitness</CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400 mt-2">
+              <CardTitle className="text-3xl font-bold text-white">Join Hubert Fitness</CardTitle>
+              <CardDescription className="text-gray-400 mt-2">
                 Start your fitness journey today
               </CardDescription>
             </div>

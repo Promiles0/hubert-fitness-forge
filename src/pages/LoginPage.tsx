@@ -71,7 +71,7 @@ const LoginPage = () => {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fitness-dark via-fitness-darkGray to-fitness-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Brand Header */}
         <div className="text-center mb-8 animate-in fade-in duration-1000">
