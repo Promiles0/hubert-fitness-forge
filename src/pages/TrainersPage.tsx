@@ -10,19 +10,6 @@ const TrainersPage = () => {
     queryFn: async () => {
       console.log('Fetching trainers from Supabase...');
       
-      // First, let's try to get ALL trainers to see what's in the database
-      const { data: allTrainers, error: allError } = await supabase
-        .from('trainers')
-        .select('*');
-      
-      console.log('All trainers in database:', allTrainers);
-      console.log('All trainers count:', allTrainers?.length || 0);
-      
-      if (allError) {
-        console.error('Error fetching all trainers:', allError);
-      }
-      
-      // Now let's try the filtered query
       const { data, error } = await supabase
         .from('trainers')
         .select('*')
@@ -30,29 +17,11 @@ const TrainersPage = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching active trainers:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Error fetching trainers:', error);
         throw error;
       }
       
-      console.log('Active trainers fetched successfully:', data);
-      console.log('Active trainers count:', data?.length || 0);
-      
-      // If no active trainers, let's also check inactive ones
-      if (!data || data.length === 0) {
-        const { data: inactiveTrainers } = await supabase
-          .from('trainers')
-          .select('*')
-          .eq('is_active', false);
-        console.log('Inactive trainers:', inactiveTrainers);
-        console.log('Inactive trainers count:', inactiveTrainers?.length || 0);
-      }
-      
+      console.log('Trainers fetched successfully:', data);
       return data;
     },
   });
@@ -104,24 +73,6 @@ const TrainersPage = () => {
           </p>
         </div>
 
-        {/* Enhanced Debug info */}
-        <div className="mb-8 p-4 bg-gray-800 rounded-lg">
-          <h3 className="text-sm font-semibold mb-2">Enhanced Debug Info:</h3>
-          <p className="text-xs text-gray-300">
-            Active trainers loaded: {trainers?.length || 0} | 
-            Loading: {isLoading ? 'Yes' : 'No'} | 
-            Error: {error ? 'Yes' : 'No'}
-          </p>
-          <p className="text-xs text-gray-300 mt-1">
-            Check browser console for detailed database query results
-          </p>
-          {trainers && trainers.length > 0 && (
-            <p className="text-xs text-gray-300 mt-1">
-              Sample trainer: {trainers[0].first_name} {trainers[0].last_name}
-            </p>
-          )}
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {trainers && trainers.length > 0 ? (
             trainers.map((trainer) => {
@@ -150,11 +101,8 @@ const TrainersPage = () => {
               <h3 className="text-xl font-semibold text-gray-400 mb-2">
                 No Active Trainers Found
               </h3>
-              <p className="text-gray-500 mb-4">
-                Check the browser console for detailed information about the database query.
-              </p>
-              <p className="text-xs text-gray-400">
-                This could be due to: Row Level Security policies, all trainers being inactive, or no trainers in the database.
+              <p className="text-gray-500">
+                We're currently updating our trainer profiles. Check back soon!
               </p>
             </div>
           )}
