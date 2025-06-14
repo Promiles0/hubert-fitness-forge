@@ -51,7 +51,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import AddTrainerDialog from "@/components/admin/AddTrainerDialog";
 
 interface Trainer {
   id: string;
@@ -70,30 +69,19 @@ const TrainersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  // Fetch trainers data with comprehensive logging
+  // Fetch trainers data
   const { data: trainers, isLoading, error, refetch } = useQuery({
     queryKey: ['trainers'],
     queryFn: async () => {
-      console.log('Admin TrainersPage: Fetching trainers...');
       const { data, error } = await supabase
         .from('trainers')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
       
-      if (error) {
-        console.error('Admin TrainersPage: Error fetching trainers:', error);
-        throw error;
-      }
-      
-      console.log('Admin TrainersPage: Trainers fetched:', data);
-      console.log('Admin TrainersPage: Number of trainers:', data?.length || 0);
+      if (error) throw error;
       return data as Trainer[];
     },
   });
-
-  console.log('Admin TrainersPage render:', { trainers, isLoading, error });
 
   // Apply filters and search
   const filteredTrainers = trainers?.filter(trainer => {
@@ -133,18 +121,13 @@ const TrainersPage = () => {
   // Handle trainer deletion
   const handleDeleteTrainer = async (id: string) => {
     try {
-      console.log('Deleting trainer with ID:', id);
       const { error } = await supabase
         .from('trainers')
         .delete()
         .eq('id', id);
       
-      if (error) {
-        console.error('Error deleting trainer:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Trainer deleted successfully');
       toast({
         title: "Trainer deleted",
         description: "Trainer has been successfully deleted",
@@ -152,12 +135,12 @@ const TrainersPage = () => {
       
       refetch();
     } catch (err) {
-      console.error('Delete trainer error:', err);
       toast({
         title: "Error",
         description: "Failed to delete trainer",
         variant: "destructive",
       });
+      console.error(err);
     }
   };
 
@@ -167,7 +150,6 @@ const TrainersPage = () => {
   };
 
   if (error) {
-    console.error('Admin TrainersPage: Query error:', error);
     return (
       <Card className="bg-fitness-darkGray border-gray-800 text-white mx-auto max-w-4xl my-8">
         <CardContent className="p-6">
@@ -198,10 +180,6 @@ const TrainersPage = () => {
         
         <Button 
           className="bg-fitness-red hover:bg-red-700"
-          onClick={() => {
-            console.log('Opening add trainer dialog');
-            setIsAddDialogOpen(true);
-          }}
         >
           <UserPlus className="mr-2 h-4 w-4" />
           Add New Trainer
@@ -263,19 +241,6 @@ const TrainersPage = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Debug Information */}
-      <Card className="bg-fitness-darkGray border-gray-800">
-        <CardContent className="p-4">
-          <div className="text-white text-sm">
-            <p>Debug Info:</p>
-            <p>- Loading: {isLoading ? 'Yes' : 'No'}</p>
-            <p>- Total Trainers: {trainers?.length || 0}</p>
-            <p>- Filtered Trainers: {filteredTrainers?.length || 0}</p>
-            <p>- Has Error: {error ? 'Yes' : 'No'}</p>
           </div>
         </CardContent>
       </Card>
@@ -418,11 +383,6 @@ const TrainersPage = () => {
           )}
         </CardContent>
       </Card>
-
-      <AddTrainerDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-      />
     </div>
   );
 };

@@ -35,12 +35,10 @@ export const useTrainerForm = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
 
   const updateFormData = (updates: Partial<TrainerFormData>) => {
-    console.log('Updating form data:', updates);
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
   const handleSpecialtyChange = (specialty: TrainerSpecialty, checked: boolean) => {
-    console.log('Specialty change:', specialty, checked);
     if (checked) {
       setFormData(prev => ({
         ...prev,
@@ -55,7 +53,6 @@ export const useTrainerForm = (onSuccess?: () => void) => {
   };
 
   const resetForm = () => {
-    console.log('Resetting form data');
     setFormData(initialFormData);
   };
 
@@ -63,14 +60,8 @@ export const useTrainerForm = (onSuccess?: () => void) => {
     setIsSubmitting(true);
 
     try {
-      console.log('useTrainerForm: Submitting form with data:', formData);
+      console.log('Adding trainer with data:', formData);
       
-      // Validate required fields
-      if (!formData.first_name || !formData.last_name || !formData.email) {
-        toast.error('Please fill in all required fields (first name, last name, email)');
-        return;
-      }
-
       const { data, error } = await supabase
         .from('trainers')
         .insert({
@@ -84,32 +75,25 @@ export const useTrainerForm = (onSuccess?: () => void) => {
           specialties: formData.specialties,
           is_active: true
         })
-        .select()
-        .single();
+        .select();
 
       if (error) {
-        console.error('useTrainerForm: Error adding trainer:', error);
+        console.error('Error adding trainer:', error);
         throw error;
       }
 
-      console.log('useTrainerForm: Trainer added successfully:', data);
+      console.log('Trainer added successfully:', data);
       toast.success('Trainer added successfully!');
       
-      // Invalidate all trainer-related queries to refresh the data
-      console.log('useTrainerForm: Invalidating trainer queries...');
-      await queryClient.invalidateQueries({ queryKey: ['trainers'] });
-      await queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
-      await queryClient.invalidateQueries({ queryKey: ['admin-comprehensive-stats'] });
-      
-      // Force refetch to ensure data is updated
-      await queryClient.refetchQueries({ queryKey: ['trainers'] });
-      
-      console.log('useTrainerForm: Queries invalidated and refetched');
+      // Invalidate all trainer-related queries
+      queryClient.invalidateQueries({ queryKey: ['trainers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-comprehensive-stats'] });
       
       resetForm();
       onSuccess?.();
     } catch (error: any) {
-      console.error('useTrainerForm: Submit error:', error);
+      console.error('Submit error:', error);
       toast.error(error.message || 'Failed to add trainer');
     } finally {
       setIsSubmitting(false);

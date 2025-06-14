@@ -25,19 +25,14 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
     submitForm,
     resetForm,
     isSubmitting
-  } = useTrainerForm(() => {
-    console.log('Trainer successfully added, closing dialog');
-    onOpenChange(false);
-  });
+  } = useTrainerForm(() => onOpenChange(false));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
     await submitForm();
   };
 
   const handleCancel = () => {
-    console.log('Dialog cancelled, resetting form');
     resetForm();
     onOpenChange(false);
   };
