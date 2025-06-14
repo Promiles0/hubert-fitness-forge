@@ -6,7 +6,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 const TrainersPage = () => {
   const { data: trainers, isLoading } = useQuery({
-    queryKey: ['trainers-public'],
+    queryKey: ['trainers'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('trainers')

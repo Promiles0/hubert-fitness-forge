@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -86,6 +85,7 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
       if (error) throw error;
 
       toast.success('Trainer added successfully!');
+      queryClient.invalidateQueries({ queryKey: ['trainers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-comprehensive-stats'] });
       
