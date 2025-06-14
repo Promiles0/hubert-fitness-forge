@@ -1,4 +1,3 @@
-
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ const HomePage = () => {
     {
       name: "Sarah Johnson",
       role: "Member since 2022",
-      content: "HUBERT FITNESS transformed my life! The trainers are amazing and the community is so supportive.",
+      content: "FitLife transformed my life! The trainers are amazing and the community is so supportive.",
       rating: 5,
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b372?w=150&h=150&fit=crop&crop=face"
     },
@@ -75,7 +74,7 @@ const HomePage = () => {
           <div className="flex items-center justify-center gap-3 mb-6">
             <Dumbbell className="h-12 w-12 text-fitness-red" />
             <h1 className="text-5xl md:text-7xl font-bold">
-              <span className="text-fitness-red">HUBERT</span> FITNESS
+              <span className="text-fitness-red">Fit</span>Life
             </h1>
           </div>
           
@@ -118,7 +117,7 @@ const HomePage = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Choose HUBERT FITNESS?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Why Choose FitLife?</h2>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               We provide everything you need to achieve your fitness goals in a supportive, motivating environment
             </p>
