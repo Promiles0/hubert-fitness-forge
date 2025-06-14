@@ -68,7 +68,9 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      console.log('Adding trainer with data:', formData);
+      
+      const { data, error } = await supabase
         .from('trainers')
         .insert({
           first_name: formData.first_name,
@@ -80,11 +82,18 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
           photo_url: formData.photo_url || null,
           specialties: formData.specialties,
           is_active: true
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding trainer:', error);
+        throw error;
+      }
 
+      console.log('Trainer added successfully:', data);
       toast.success('Trainer added successfully!');
+      
+      // Invalidate all trainer-related queries
       queryClient.invalidateQueries({ queryKey: ['trainers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-trainers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-comprehensive-stats'] });
@@ -103,7 +112,8 @@ const AddTrainerDialog = ({ open, onOpenChange }: AddTrainerDialogProps) => {
       
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Submit error:', error);
+      toast.error(error.message || 'Failed to add trainer');
     } finally {
       setIsSubmitting(false);
     }

@@ -5,22 +5,46 @@ import TrainerCard from "@/components/TrainerCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 const TrainersPage = () => {
-  const { data: trainers, isLoading } = useQuery({
+  const { data: trainers, isLoading, error } = useQuery({
     queryKey: ['trainers'],
     queryFn: async () => {
+      console.log('Fetching trainers...');
       const { data, error } = await supabase
         .from('trainers')
         .select('*')
         .eq('is_active', true)
         .order('created_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trainers:', error);
+        throw error;
+      }
+      
+      console.log('Trainers fetched:', data);
       return data;
     },
   });
 
+  console.log('TrainersPage render - trainers:', trainers, 'isLoading:', isLoading, 'error:', error);
+
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
+  }
+
+  if (error) {
+    console.error('Query error:', error);
+    return (
+      <div className="min-h-screen bg-fitness-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-gray-400 mb-2">
+            Error Loading Trainers
+          </h3>
+          <p className="text-gray-500">
+            Please try refreshing the page
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
