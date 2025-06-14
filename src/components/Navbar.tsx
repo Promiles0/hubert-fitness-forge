@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,14 +43,16 @@ const Navbar = () => {
 
   return (
     <nav className="bg-fitness-black shadow-lg sticky top-0 z-50">
-      <div className="container-custom">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-fitness-red rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">F</span>
+              <span className="text-white font-bold text-sm">H</span>
             </div>
-            <span className="text-white font-bold text-xl">FitLife</span>
+            <span className="text-white font-bold text-xl">
+              <span className="text-fitness-red">HUBERT</span> FITNESS
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

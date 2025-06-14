@@ -9,8 +9,6 @@ import TrainerCard from '@/components/TrainerCard';
 import TestimonialCard from '@/components/TestimonialCard';
 import ScrollIndicator from '@/components/ScrollIndicator';
 import { useAuth } from '@/contexts/AuthContext';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -39,7 +37,6 @@ const HomePage = () => {
 
   return (
     <>
-      <Navbar />
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image */}
@@ -415,8 +412,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </>
   );
 };
