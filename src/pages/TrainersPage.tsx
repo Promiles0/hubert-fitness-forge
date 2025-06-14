@@ -56,13 +56,18 @@ const TrainersPage = () => {
   return (
     <div className="min-h-screen bg-fitness-black text-white">
       <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Meet Our Trainers</h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Our certified fitness professionals are here to help you achieve your goals
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            Meet Our Trainers
+          </h1>
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+            Our certified fitness professionals are here to guide you on your journey to better health and fitness. 
+            Each trainer brings unique expertise and passion to help you achieve your goals.
           </p>
         </div>
 
+        {/* Trainers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {trainers && trainers.length > 0 ? (
             trainers.map((trainer) => {
@@ -73,7 +78,7 @@ const TrainersPage = () => {
               const trainerImage = trainer.photo_url || 
                 `https://api.dicebear.com/7.x/initials/svg?seed=${trainer.first_name}${trainer.last_name}`;
               const trainerBio = trainer.bio || 
-                'Professional fitness trainer dedicated to helping you reach your goals.';
+                'Professional fitness trainer dedicated to helping you reach your goals with personalized training programs and expert guidance.';
 
               return (
                 <TrainerCard
@@ -83,17 +88,26 @@ const TrainersPage = () => {
                   image={trainerImage}
                   bio={trainerBio}
                   socialMedia={trainer.social_links as any}
+                  trainer={{
+                    experience_years: trainer.experience_years,
+                    certifications: trainer.certifications,
+                    hourly_rate: trainer.hourly_rate,
+                    availability: trainer.availability
+                  }}
                 />
               );
             })
           ) : (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-400 mb-2">
-                No Active Trainers Found
-              </h3>
-              <p className="text-gray-500">
-                We're currently updating our trainer profiles. Check back soon!
-              </p>
+            <div className="col-span-full text-center py-16">
+              <div className="max-w-md mx-auto">
+                <h3 className="text-2xl font-semibold text-gray-400 mb-4">
+                  No Active Trainers Found
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  We're currently updating our trainer profiles. Check back soon for our amazing team of fitness professionals!
+                </p>
+                <div className="w-16 h-1 bg-fitness-red mx-auto rounded"></div>
+              </div>
             </div>
           )}
         </div>
