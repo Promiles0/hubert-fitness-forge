@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, User, Lock, ArrowRight, CheckCircle, XCircle, Dumbbell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 const SignupPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +47,14 @@ const SignupPage = () => {
     if (passwordStrength < 75) return "Good";
     return "Strong";
   };
+  const getButtonDisabledReason = () => {
+    if (isLoading) return "Form is submitting...";
+    if (!emailValid) return "Email is not valid";
+    if (passwordStrength < 50) return "Password is too weak";
+    if (password !== confirmPassword) return "Passwords don't match";
+    return null;
+  };
+  const isButtonDisabled = isLoading || !emailValid || passwordStrength < 50 || password !== confirmPassword;
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -84,7 +93,8 @@ const SignupPage = () => {
     }
   };
   if (!mounted) return null;
-  return <div className="min-h-screen bg-black flex items-center justify-center p-4">
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Brand Header */}
         <div className="text-center mb-8 animate-in fade-in duration-1000">
@@ -174,11 +184,25 @@ const SignupPage = () => {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isLoading || !emailValid || passwordStrength < 50 || password !== confirmPassword} className="w-full text-white font-semibold py-3 transition-all duration-300 transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-1300 group bg-red-700 hover:bg-red-600">
-                {isLoading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" /> : <>
+              {getButtonDisabledReason() && (
+                <div className="text-sm text-yellow-400 text-center bg-yellow-400/10 p-2 rounded">
+                  Button disabled: {getButtonDisabledReason()}
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                disabled={isButtonDisabled}
+                className="w-full text-white font-semibold py-3 transition-all duration-300 transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-1300 group bg-red-700 hover:bg-red-600"
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
                     Create Account
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </>}
+                  </>
+                )}
               </Button>
             </form>
 
@@ -196,6 +220,8 @@ const SignupPage = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default SignupPage;
