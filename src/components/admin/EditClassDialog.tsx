@@ -43,6 +43,7 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
 
   useEffect(() => {
     if (classData && open) {
+      console.log('Setting form data with classData:', classData);
       setFormData({
         name: classData.name || '',
         description: classData.description || '',
@@ -71,13 +72,19 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
     setIsSubmitting(true);
 
     try {
+      console.log('Submitting class update with data:', {
+        formData,
+        scheduleData,
+        classId: classData.id
+      });
+
       // Update the class
       const { error: classError } = await supabase
         .from('classes')
         .update({
           name: formData.name,
           description: formData.description,
-          class_type: formData.class_type as any, // Cast to bypass type checking for now
+          class_type: formData.class_type,
           capacity: parseInt(formData.capacity),
           duration_minutes: parseInt(formData.duration_minutes),
           room: formData.room,
@@ -86,15 +93,23 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         })
         .eq('id', classData.id);
 
-      if (classError) throw classError;
+      if (classError) {
+        console.error('Class update error:', classError);
+        throw classError;
+      }
 
       // Update schedule if provided
       if (scheduleData.day_of_week && scheduleData.start_time && scheduleData.end_time) {
         // First, delete existing schedules
-        await supabase
+        const { error: deleteError } = await supabase
           .from('class_schedules')
           .delete()
           .eq('class_id', classData.id);
+
+        if (deleteError) {
+          console.error('Schedule delete error:', deleteError);
+          throw deleteError;
+        }
 
         // Then create new schedule
         const { error: scheduleError } = await supabase
@@ -106,7 +121,10 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
             end_time: scheduleData.end_time + ':00',
           });
 
-        if (scheduleError) throw scheduleError;
+        if (scheduleError) {
+          console.error('Schedule insert error:', scheduleError);
+          throw scheduleError;
+        }
       }
 
       toast.success('Class updated successfully!');
