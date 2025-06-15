@@ -217,6 +217,44 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin_conversation: boolean
+          last_message_at: string | null
+          trainer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin_conversation?: boolean
+          last_message_at?: string | null
+          trainer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin_conversation?: boolean
+          last_message_at?: string | null
+          trainer_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meals: {
         Row: {
           calories: number
@@ -407,38 +445,46 @@ export type Database = {
       messages: {
         Row: {
           content: string
+          conversation_id: string | null
           created_at: string
           id: string
           is_read: boolean
-          message_type: Database["public"]["Enums"]["message_type"]
           recipient_id: string | null
           sender_id: string | null
-          subject: string | null
+          sent_at: string
           updated_at: string
         }
         Insert: {
           content: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
-          message_type: Database["public"]["Enums"]["message_type"]
           recipient_id?: string | null
           sender_id?: string | null
-          subject?: string | null
+          sent_at?: string
           updated_at?: string
         }
         Update: {
           content?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
-          message_type?: Database["public"]["Enums"]["message_type"]
           recipient_id?: string | null
           sender_id?: string | null
-          subject?: string | null
+          sent_at?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {

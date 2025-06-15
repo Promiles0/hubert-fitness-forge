@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,75 +8,85 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Search,
-  Plus,
-  Mail,
-  Send,
-  Inbox,
-  Archive,
-  Trash2,
-  Clock,
-  CheckCircle,
+  MessageSquare,
   Users,
-  MessageSquare
+  Clock,
+  Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConversationView from "@/components/messaging/ConversationView";
 
 const MessagesManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("inbox");
-  const queryClient = useQueryClient();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
-  // Fetch messages with profiles
-  const { data: messages, isLoading } = useQuery({
-    queryKey: ['admin-messages', searchTerm, activeTab],
+  // Fetch all conversations for admin view
+  const { data: conversations, isLoading } = useQuery({
+    queryKey: ['admin-conversations', searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('messages')
+      let query = supabase
+        .from('conversations')
         .select(`
-          *
+          *,
+          messages!inner(
+            content,
+            sender_id,
+            sent_at,
+            is_read
+          ),
+          profiles!conversations_user_id_fkey(
+            name
+          )
         `)
-        .order('created_at', { ascending: false });
+        .order('last_message_at', { ascending: false });
 
+      const { data, error } = await query;
       if (error) throw error;
-      return data;
+
+      // Process conversations to get user names and stats
+      const processedConversations = data.map((conv: any) => {
+        const messages = conv.messages || [];
+        const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+        const unreadCount = messages.filter((msg: any) => !msg.is_read && msg.sender_id !== conv.user_id).length;
+
+        return {
+          ...conv,
+          user_name: conv.profiles?.name || 'Unknown User',
+          last_message: lastMessage,
+          unread_count: unreadCount,
+          total_messages: messages.length
+        };
+      });
+
+      return processedConversations.filter(conv => 
+        searchTerm === "" || 
+        conv.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     },
   });
 
-  const getMessageTypeColor = (type: string) => {
-    switch (type) {
-      case 'admin': return 'bg-blue-100 text-blue-800';
-      case 'customer': return 'bg-yellow-100 text-yellow-800';
-      case 'system': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Calculate stats
+  const stats = conversations ? {
+    total: conversations.length,
+    unread: conversations.filter(c => c.unread_count > 0).length,
+    admin: conversations.filter(c => c.is_admin_conversation).length,
+    trainer: conversations.filter(c => !c.is_admin_conversation).length,
+  } : { total: 0, unread: 0, admin: 0, trainer: 0 };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
     }
   };
-
-  const filteredMessages = messages?.filter(message => {
-    const matchesSearch = searchTerm === "" || 
-      message.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesSearch;
-  });
-
-  // Calculate stats
-  const stats = messages ? {
-    total: messages.length,
-    unread: messages.filter(m => !m.is_read).length,
-    admin: messages.filter(m => m.message_type === 'admin').length,
-    customer: messages.filter(m => m.message_type === 'customer').length,
-  } : { total: 0, unread: 0, admin: 0, customer: 0 };
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -87,20 +97,10 @@ const MessagesManagementPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messages</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messages Management</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Communicate with members and trainers
+            Monitor and manage all user conversations
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline">
-            <Users className="h-4 w-4 mr-2" />
-            Bulk Message
-          </Button>
-          <Button className="bg-fitness-red hover:bg-red-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Compose
-          </Button>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ const MessagesManagementPage = () => {
                 <div className="text-2xl font-bold text-blue-600">
                   {stats.total}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Messages</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Conversations</p>
               </div>
               <MessageSquare className="h-8 w-8 text-blue-600" />
             </div>
@@ -126,9 +126,9 @@ const MessagesManagementPage = () => {
                 <div className="text-2xl font-bold text-orange-600">
                   {stats.unread}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Unread</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Need Response</p>
               </div>
-              <Mail className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -139,9 +139,9 @@ const MessagesManagementPage = () => {
                 <div className="text-2xl font-bold text-purple-600">
                   {stats.admin}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Admin Messages</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Admin Conversations</p>
               </div>
-              <Send className="h-8 w-8 text-purple-600" />
+              <Users className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -150,143 +150,121 @@ const MessagesManagementPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {stats.customer}
+                  {stats.trainer}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Customer Messages</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Trainer Conversations</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <Send className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[700px]">
+        {/* Conversations List */}
+        <Card className="bg-fitness-darkGray border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center justify-between">
+              <span>All Conversations</span>
+              <Badge variant="secondary">{conversations?.length || 0}</Badge>
+            </CardTitle>
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search messages..."
+                placeholder="Search conversations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="bg-fitness-black border-gray-700 text-white pl-10"
               />
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Messages Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Message List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="inbox">
-                <Inbox className="h-4 w-4 mr-2" />
-                Inbox
-              </TabsTrigger>
-              <TabsTrigger value="sent">
-                <Send className="h-4 w-4 mr-2" />
-                Sent
-              </TabsTrigger>
-              <TabsTrigger value="archived">
-                <Archive className="h-4 w-4 mr-2" />
-                Archived
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="inbox" className="mt-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>From</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMessages?.map((message) => (
-                    <TableRow key={message.id} className={!message.is_read ? 'bg-blue-50 dark:bg-blue-950/20' : ''}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              U
-                            </AvatarFallback>
-                          </Avatar>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 overflow-y-auto">
+            {conversations?.length === 0 ? (
+              <div className="p-4 text-center text-gray-400">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No conversations found</p>
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {conversations?.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    onClick={() => setSelectedConversationId(conversation.id)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedConversationId === conversation.id
+                        ? "bg-fitness-red bg-opacity-20 border-l-4 border-fitness-red"
+                        : "hover:bg-gray-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-fitness-red text-white">
+                          {conversation.is_admin_conversation ? (
+                            <Users className="h-5 w-5" />
+                          ) : (
+                            conversation.user_name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-medium">
-                              User {message.sender_id?.slice(0, 8) || 'System'}
+                            <p className="text-white font-medium truncate">
+                              {conversation.user_name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge 
+                                variant={conversation.is_admin_conversation ? "default" : "secondary"} 
+                                className="text-xs"
+                              >
+                                {conversation.is_admin_conversation ? "Admin" : "Trainer"}
+                              </Badge>
+                              <span className="text-xs text-gray-400">
+                                {conversation.total_messages} messages
+                              </span>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className={`font-medium ${!message.is_read ? 'font-bold' : ''}`}>
-                            {message.subject || 'No Subject'}
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">
+                              {conversation.last_message ? formatTime(conversation.last_message.sent_at) : ''}
+                            </p>
+                            {conversation.unread_count > 0 && (
+                              <Badge className="bg-fitness-red text-white text-xs mt-1">
+                                {conversation.unread_count}
+                              </Badge>
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {message.content}
-                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getMessageTypeColor(message.message_type)}>
-                          {message.message_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          {new Date(message.created_at).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={message.is_read ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}>
-                          {message.is_read ? 'Read' : 'Unread'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-
-            <TabsContent value="sent" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                Sent messages will appear here
+                        {conversation.last_message && (
+                          <p className="text-sm text-gray-400 truncate mt-1">
+                            {conversation.last_message.content}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </TabsContent>
+            )}
+          </CardContent>
+        </Card>
 
-            <TabsContent value="archived" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                Archived messages will appear here
+        {/* Conversation View */}
+        <div className="lg:col-span-2">
+          {selectedConversationId ? (
+            <ConversationView conversationId={selectedConversationId} />
+          ) : (
+            <Card className="h-full bg-fitness-darkGray border-gray-800 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-xl font-medium">Select a conversation</p>
+                <p className="text-sm mt-1">Choose a conversation to view and respond to messages</p>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
