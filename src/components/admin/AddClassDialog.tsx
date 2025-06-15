@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -39,11 +39,32 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
+  // Fetch trainers from Supabase
+  const { data: trainers, isLoading: trainersLoading } = useQuery({
+    queryKey: ['trainers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trainers')
+        .select('id, first_name, last_name')
+        .eq('is_active', true)
+        .order('first_name');
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      // Validate that a trainer is selected
+      if (!formData.trainer_id) {
+        toast.error("Please select a trainer for the class");
+        return;
+      }
+
       // Insert class
       const { data: classData, error: classError } = await supabase
         .from('classes')
@@ -54,7 +75,7 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
           capacity: parseInt(formData.capacity),
           duration_minutes: parseInt(formData.duration_minutes),
           room: formData.room,
-          trainer_id: formData.trainer_id || null
+          trainer_id: formData.trainer_id
         })
         .select()
         .single();
@@ -154,6 +175,26 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="trainer">Trainer *</Label>
+            <Select 
+              value={formData.trainer_id} 
+              onValueChange={(value) => setFormData({ ...formData, trainer_id: value })}
+              disabled={trainersLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={trainersLoading ? "Loading trainers..." : "Select trainer"} />
+              </SelectTrigger>
+              <SelectContent>
+                {trainers?.map((trainer) => (
+                  <SelectItem key={trainer.id} value={trainer.id}>
+                    {trainer.first_name} {trainer.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
