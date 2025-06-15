@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { CSSProperties } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface TrainerCardProps {
   name: string;
@@ -37,6 +38,7 @@ const TrainerCard = ({
   style,
   trainer
 }: TrainerCardProps) => {
+  const navigate = useNavigate();
   const certifications = trainer?.certifications ? Object.values(trainer.certifications) : [];
   const experienceYears = trainer?.experience_years || 0;
   const hourlyRate = trainer?.hourly_rate;
@@ -46,6 +48,14 @@ const TrainerCard = ({
   // Generate a mock rating for demo purposes
   const rating = 4.8;
   const totalReviews = Math.floor(Math.random() * 150) + 20;
+
+  const handleMessageClick = () => {
+    navigate('/dashboard/chat');
+  };
+
+  const handleBookSessionClick = () => {
+    navigate('/schedule');
+  };
 
   return (
     <div 
@@ -166,6 +176,7 @@ const TrainerCard = ({
                 size="sm" 
                 variant="outline" 
                 className="text-white border-white/20 hover:bg-fitness-red hover:border-fitness-red transition-colors"
+                onClick={handleMessageClick}
               >
                 <MessageCircle size={14} />
               </Button>
@@ -173,6 +184,7 @@ const TrainerCard = ({
                 size="sm" 
                 variant="outline"
                 className="text-white border-white/20 hover:bg-fitness-red hover:border-fitness-red transition-colors"
+                onClick={handleBookSessionClick}
               >
                 <Calendar size={14} />
               </Button>
@@ -264,6 +276,7 @@ const TrainerCard = ({
         <div className="flex space-x-3 pt-4">
           <Button 
             className="flex-1 bg-fitness-red hover:bg-red-700 text-white font-medium py-2.5 rounded-lg transition-colors"
+            onClick={handleBookSessionClick}
           >
             <Calendar size={16} className="mr-2" />
             Book Session
@@ -271,6 +284,7 @@ const TrainerCard = ({
           <Button 
             variant="outline" 
             className="flex-1 border-fitness-lightGray/30 text-gray-300 hover:bg-fitness-lightGray/10 hover:text-white py-2.5 rounded-lg transition-colors"
+            onClick={handleMessageClick}
           >
             <MessageCircle size={16} className="mr-2" />
             Message
