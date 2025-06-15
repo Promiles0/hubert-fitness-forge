@@ -84,7 +84,7 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         .update({
           name: formData.name,
           description: formData.description,
-          class_type: formData.class_type,
+          class_type: formData.class_type as any,
           capacity: parseInt(formData.capacity),
           duration_minutes: parseInt(formData.duration_minutes),
           room: formData.room,
