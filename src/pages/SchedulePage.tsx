@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { toast } from "sonner";
@@ -15,8 +14,9 @@ import EmptySchedule from "@/components/schedule/EmptySchedule";
 const SchedulePage = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
   const [bookingStates, setBookingStates] = useState<Record<string, boolean>>({});
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: classes, isLoading } = useQuery({
     queryKey: ['schedule', selectedDay],
@@ -86,9 +86,9 @@ const SchedulePage = () => {
     return Math.max(0, schedule.classes.capacity - currentBookingCount);
   };
 
-  const handleReserveSpot = (schedule: any) => {
+  const handleReserveSpot = async (schedule: any) => {
     // Check if user is authenticated before allowing reservation
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast.error("Please log in to reserve your spot!");
       navigate('/login');
       return;
@@ -100,11 +100,40 @@ const SchedulePage = () => {
       return;
     }
 
-    const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
     setBookingStates(prev => ({ ...prev, [schedule.id]: true }));
 
     try {
+      // Check if user already has a booking for this class schedule
+      const { data: existingBooking, error: checkError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('class_schedule_id', schedule.id)
+        .eq('member_id', user.id)
+        .eq('status', 'confirmed')
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingBooking) {
+        toast.error("You have already booked this class!");
+        setBookingStates(prev => ({ ...prev, [schedule.id]: false }));
+        return;
+      }
+
+      // Create booking in Supabase
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          class_schedule_id: schedule.id,
+          member_id: user.id,
+          status: 'confirmed'
+        });
+
+      if (bookingError) throw bookingError;
+
+      // Also store in localStorage for backward compatibility and offline access
+      const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       // Get current date for the selected day
       const today = new Date();
       const currentDay = today.getDay();
@@ -141,25 +170,15 @@ const SchedulePage = () => {
       // Get existing bookings from localStorage
       const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
       
-      // Check if already booked
-      const alreadyBooked = existingBookings.some((b: any) => 
-        b.className === booking.className && 
-        b.date === booking.date && 
-        b.time === booking.time
-      );
-
-      if (alreadyBooked) {
-        toast.error("You have already booked this class!");
-        setBookingStates(prev => ({ ...prev, [schedule.id]: false }));
-        return;
-      }
-
       // Add new booking
       const updatedBookings = [...existingBookings, booking];
       localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
       
       const availableSpots = getAvailableSpots(schedule);
       toast.success(`Successfully reserved your spot in ${schedule.classes.name}! ${availableSpots - 1} spots remaining.`);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['current-bookings'] });
       
       // Reset booking state after a short delay
       setTimeout(() => {
