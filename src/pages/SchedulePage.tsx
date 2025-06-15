@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +7,11 @@ import { Calendar, Clock, Users, MapPin, Star, Zap, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { formatTimeForDisplay } from "@/utils/timeUtils";
+import { toast } from "sonner";
 
 const SchedulePage = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+  const [bookingStates, setBookingStates] = useState<Record<string, boolean>>({});
 
   const { data: classes, isLoading } = useQuery({
     queryKey: ['schedule', selectedDay],
@@ -46,6 +47,74 @@ const SchedulePage = () => {
     { name: "Friday", value: 5 },
     { name: "Saturday", value: 6 }
   ];
+
+  const handleReserveSpot = (schedule: any) => {
+    const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    setBookingStates(prev => ({ ...prev, [schedule.id]: true }));
+
+    try {
+      // Get current date for the selected day
+      const today = new Date();
+      const currentDay = today.getDay();
+      const daysUntilSelected = (selectedDay - currentDay + 7) % 7;
+      const classDate = new Date(today);
+      classDate.setDate(today.getDate() + daysUntilSelected);
+      
+      const booking = {
+        id: bookingId,
+        classId: schedule.class_id,
+        className: schedule.classes.name,
+        trainer: `${schedule.classes.trainers.first_name} ${schedule.classes.trainers.last_name}`,
+        time: formatTimeForDisplay(schedule.start_time),
+        date: classDate.toISOString().split('T')[0],
+        dateFormatted: classDate.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }),
+        duration: `${schedule.classes.duration_minutes} min`,
+        level: 'Intermediate', // Default level since it's not in the schedule data
+        category: schedule.classes.class_type,
+        room: schedule.classes.room,
+        status: 'confirmed' as const,
+        bookedAt: new Date().toISOString()
+      };
+
+      // Get existing bookings from localStorage
+      const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+      
+      // Check if already booked
+      const alreadyBooked = existingBookings.some((b: any) => 
+        b.className === booking.className && 
+        b.date === booking.date && 
+        b.time === booking.time
+      );
+
+      if (alreadyBooked) {
+        toast.error("You have already booked this class!");
+        setBookingStates(prev => ({ ...prev, [schedule.id]: false }));
+        return;
+      }
+
+      // Add new booking
+      const updatedBookings = [...existingBookings, booking];
+      localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
+      
+      toast.success(`Successfully reserved your spot in ${schedule.classes.name}!`);
+      
+      // Reset booking state after a short delay
+      setTimeout(() => {
+        setBookingStates(prev => ({ ...prev, [schedule.id]: false }));
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error booking class:', error);
+      toast.error("Failed to reserve your spot. Please try again.");
+      setBookingStates(prev => ({ ...prev, [schedule.id]: false }));
+    }
+  };
 
   const getClassTypeColor = (type: string) => {
     const colors = {
@@ -218,11 +287,15 @@ const SchedulePage = () => {
                     </div>
                     
                     {/* Enhanced CTA Button */}
-                    <Button className="w-full bg-gradient-to-r from-fitness-red to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 text-lg rounded-xl transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/30 group-hover:scale-[1.02] border-0 relative overflow-hidden">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-fitness-red to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 text-lg rounded-xl transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/30 group-hover:scale-[1.02] border-0 relative overflow-hidden disabled:opacity-75 disabled:cursor-not-allowed"
+                      onClick={() => handleReserveSpot(schedule)}
+                      disabled={bookingStates[schedule.id]}
+                    >
                       <span className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         <Star className="h-5 w-5" />
-                        Reserve Your Spot
+                        {bookingStates[schedule.id] ? 'Reserving...' : 'Reserve Your Spot'}
                       </span>
                     </Button>
                   </CardContent>
