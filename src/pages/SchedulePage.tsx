@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,12 +104,44 @@ const SchedulePage = () => {
     setBookingStates(prev => ({ ...prev, [schedule.id]: true }));
 
     try {
+      // First, get or create member record for the current user
+      let memberId = user.id;
+      
+      // Check if member exists, if not create one
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from('members')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (memberCheckError) throw memberCheckError;
+
+      if (!existingMember) {
+        // Create member record if it doesn't exist
+        const { data: newMember, error: memberCreateError } = await supabase
+          .from('members')
+          .insert({
+            user_id: user.id,
+            email: user.email || '',
+            first_name: user.user_metadata?.first_name || 'User',
+            last_name: user.user_metadata?.last_name || '',
+            phone: user.user_metadata?.phone || null
+          })
+          .select('id')
+          .single();
+
+        if (memberCreateError) throw memberCreateError;
+        memberId = newMember.id;
+      } else {
+        memberId = existingMember.id;
+      }
+
       // Check if user already has a booking for this class schedule
       const { data: existingBooking, error: checkError } = await supabase
         .from('bookings')
         .select('id')
         .eq('class_schedule_id', schedule.id)
-        .eq('member_id', user.id)
+        .eq('member_id', memberId)
         .eq('status', 'confirmed')
         .maybeSingle();
 
@@ -125,7 +158,7 @@ const SchedulePage = () => {
         .from('bookings')
         .insert({
           class_schedule_id: schedule.id,
-          member_id: user.id,
+          member_id: memberId,
           status: 'confirmed'
         });
 
