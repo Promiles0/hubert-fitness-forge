@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -148,55 +147,60 @@ const ClassesPage = () => {
 
   if (error) {
     return (
-      <Card className="bg-fitness-darkGray border-gray-800 text-white mx-auto max-w-4xl my-8">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <Calendar className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Error Loading Classes</h3>
-            <p className="text-gray-400 mb-4">
-              There was an error loading the class data. Please try again later.
-            </p>
-            <Button 
-              variant="outline" 
-              className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white"
-              onClick={() => refetch()}
-            >
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen p-4 sm:p-6">
+        <Card className="bg-fitness-darkGray border-gray-800 text-white mx-auto max-w-4xl">
+          <CardContent className="p-4 sm:p-6">
+            <div className="text-center">
+              <Calendar className="h-8 w-8 sm:h-12 sm:w-12 text-red-500 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-lg sm:text-xl font-bold mb-2">Error Loading Classes</h3>
+              <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
+                There was an error loading the class data. Please try again later.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-fitness-red text-fitness-red hover:bg-fitness-red hover:text-white"
+                onClick={() => refetch()}
+              >
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <ClassesHeader onAddClass={handleAddClass} />
-      
-      <ClassesFilters
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        classTypeFilter={classTypeFilter}
-        setClassTypeFilter={setClassTypeFilter}
-        trainerFilter={trainerFilter}
-        setTrainerFilter={setTrainerFilter}
-        trainers={trainers}
-      />
+    <div className="min-h-screen p-3 sm:p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        <ClassesHeader onAddClass={handleAddClass} />
+        
+        <ClassesFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          classTypeFilter={classTypeFilter}
+          setClassTypeFilter={setClassTypeFilter}
+          trainerFilter={trainerFilter}
+          setTrainerFilter={setTrainerFilter}
+          trainers={trainers}
+        />
 
-      <AdminClassesTable
-        filteredClasses={filteredClasses}
-        isLoading={isLoading}
-        onEditClass={handleEditClass}
-        onDeleteClass={handleDeleteClassClick}
-        onViewBookings={handleViewBookings}
-      />
+        <AdminClassesTable
+          filteredClasses={filteredClasses}
+          isLoading={isLoading}
+          onEditClass={handleEditClass}
+          onDeleteClass={handleDeleteClassClick}
+          onViewBookings={handleViewBookings}
+        />
 
-      <AdminClassDeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        selectedClass={selectedClass}
-        onConfirmDelete={handleDeleteClass}
-      />
+        <AdminClassDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          selectedClass={selectedClass}
+          onConfirmDelete={handleDeleteClass}
+        />
+      </div>
     </div>
   );
 };
