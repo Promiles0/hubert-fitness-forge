@@ -12,21 +12,21 @@ const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout, hasRole, loading } = useAuth();
+  const { user, logout, hasRole, loading, rolesLoading } = useAuth();
   const [accessChecked, setAccessChecked] = useState(false);
 
   // Check admin access
   useEffect(() => {
     // Don't check access until auth is fully loaded
-    if (loading) return;
+    if (loading || rolesLoading) return;
 
     if (!user) {
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
     
-    // Add a small delay to ensure roles are fully loaded
-    const checkAccess = () => {
+    // Only check access once roles are fully loaded
+    if (!rolesLoading) {
       if (!hasRole('admin')) {
         console.log('Access denied: User does not have admin role');
         navigate("/dashboard");
@@ -35,21 +35,16 @@ const AdminDashboardPage = () => {
         console.log('Admin access granted');
         setAccessChecked(true);
       }
-    };
-
-    // Small delay to ensure role data is available
-    const timer = setTimeout(checkAccess, 100);
-    
-    return () => clearTimeout(timer);
-  }, [user, hasRole, navigate, location.pathname, loading]);
+    }
+  }, [user, hasRole, navigate, location.pathname, loading, rolesLoading]);
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
-  // Show loading while auth is loading or access is being checked
-  if (loading || !accessChecked) {
+  // Show loading while auth is loading, roles are loading, or access is being checked
+  if (loading || rolesLoading || !accessChecked) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex items-center justify-center">
         <LoadingSpinner size={40} />
