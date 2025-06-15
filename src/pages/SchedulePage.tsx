@@ -8,10 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { formatTimeForDisplay } from "@/utils/timeUtils";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const SchedulePage = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
   const [bookingStates, setBookingStates] = useState<Record<string, boolean>>({});
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const { data: classes, isLoading } = useQuery({
     queryKey: ['schedule', selectedDay],
@@ -49,6 +53,13 @@ const SchedulePage = () => {
   ];
 
   const handleReserveSpot = (schedule: any) => {
+    // Check if user is authenticated before allowing reservation
+    if (!isAuthenticated) {
+      toast.error("Please log in to reserve your spot!");
+      navigate('/login');
+      return;
+    }
+
     const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     setBookingStates(prev => ({ ...prev, [schedule.id]: true }));
