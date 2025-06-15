@@ -61,11 +61,16 @@ const SchedulePage = () => {
       const classDate = new Date(today);
       classDate.setDate(today.getDate() + daysUntilSelected);
       
+      // Handle trainer data safely - check if trainers exists and is not null
+      const trainerName = schedule.classes.trainers && schedule.classes.trainers.first_name && schedule.classes.trainers.last_name
+        ? `${schedule.classes.trainers.first_name} ${schedule.classes.trainers.last_name}`
+        : 'Staff Trainer';
+      
       const booking = {
         id: bookingId,
         classId: schedule.class_id,
         className: schedule.classes.name,
-        trainer: `${schedule.classes.trainers.first_name} ${schedule.classes.trainers.last_name}`,
+        trainer: trainerName,
         time: formatTimeForDisplay(schedule.start_time),
         date: classDate.toISOString().split('T')[0],
         dateFormatted: classDate.toLocaleDateString('en-US', { 
@@ -265,25 +270,29 @@ const SchedulePage = () => {
                         </div>
                       </div>
                       
-                      {/* Enhanced Trainer Card */}
-                      {schedule.classes.trainers && (
-                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-fitness-red/10 via-red-500/5 to-fitness-red/10 rounded-xl border border-fitness-red/20 backdrop-blur-sm group-hover:border-fitness-red/40 transition-all duration-500">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-fitness-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                              {schedule.classes.trainers.first_name.charAt(0)}
-                            </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
+                      {/* Enhanced Trainer Card - Handle null trainer safely */}
+                      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-fitness-red/10 via-red-500/5 to-fitness-red/10 rounded-xl border border-fitness-red/20 backdrop-blur-sm group-hover:border-fitness-red/40 transition-all duration-500">
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-gradient-to-br from-fitness-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            {schedule.classes.trainers && schedule.classes.trainers.first_name 
+                              ? schedule.classes.trainers.first_name.charAt(0)
+                              : 'T'
+                            }
                           </div>
-                          <div className="flex-1">
-                            <div className="text-white font-semibold text-lg">
-                              {schedule.classes.trainers.first_name} {schedule.classes.trainers.last_name}
-                            </div>
-                            <div className="text-xs text-fitness-red font-medium">
-                              ⭐ Certified Professional Trainer
-                            </div>
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-white font-semibold text-lg">
+                            {schedule.classes.trainers && schedule.classes.trainers.first_name && schedule.classes.trainers.last_name
+                              ? `${schedule.classes.trainers.first_name} ${schedule.classes.trainers.last_name}`
+                              : 'Staff Trainer'
+                            }
+                          </div>
+                          <div className="text-xs text-fitness-red font-medium">
+                            ⭐ Certified Professional Trainer
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                     
                     {/* Enhanced CTA Button */}
