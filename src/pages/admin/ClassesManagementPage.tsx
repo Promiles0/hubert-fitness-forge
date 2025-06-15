@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import AddClassDialog from "@/components/admin/AddClassDialog";
+import EditClassDialog from "@/components/admin/EditClassDialog";
+import DeleteClassDialog from "@/components/admin/DeleteClassDialog";
 import {
   Table,
   TableBody,
@@ -31,6 +32,9 @@ import {
 const ClassesManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<any>(null);
   const queryClient = useQueryClient();
 
   // Fetch classes with schedules and trainers
@@ -108,6 +112,46 @@ const ClassesManagementPage = () => {
   const getDayName = (dayNumber: number) => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[dayNumber] || 'Unknown';
+  };
+
+  const handleEditClass = (classItem: any) => {
+    setSelectedClass(classItem);
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteClass = (classItem: any) => {
+    setSelectedClass(classItem);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedClass) return;
+
+    try {
+      // First delete all class schedules
+      const { error: scheduleError } = await supabase
+        .from('class_schedules')
+        .delete()
+        .eq('class_id', selectedClass.id);
+
+      if (scheduleError) throw scheduleError;
+
+      // Then delete the class
+      const { error: classError } = await supabase
+        .from('classes')
+        .delete()
+        .eq('id', selectedClass.id);
+
+      if (classError) throw classError;
+
+      toast.success(`Class "${selectedClass.name}" deleted successfully!`);
+      queryClient.invalidateQueries({ queryKey: ['admin-classes'] });
+      setShowDeleteDialog(false);
+      setSelectedClass(null);
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      toast.error('Failed to delete class. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -262,13 +306,21 @@ const ClassesManagementPage = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditClass(classItem)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm">
                         <UserCheck className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteClass(classItem)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -284,6 +336,23 @@ const ClassesManagementPage = () => {
         open={showAddDialog} 
         onOpenChange={setShowAddDialog} 
       />
+
+      {selectedClass && (
+        <EditClassDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          classData={selectedClass}
+        />
+      )}
+
+      {selectedClass && (
+        <DeleteClassDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={confirmDelete}
+          className={selectedClass.name}
+        />
+      )}
     </div>
   );
 };
