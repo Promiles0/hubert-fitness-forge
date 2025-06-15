@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import AddClassDialog from "@/components/admin/AddClassDialog";
 import EditClassDialog from "@/components/admin/EditClassDialog";
 import DeleteClassDialog from "@/components/admin/DeleteClassDialog";
+import ClassBookingsDialog from "@/components/admin/ClassBookingsDialog";
 import {
   Table,
   TableBody,
@@ -35,6 +35,7 @@ const ClassesManagementPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBookingsDialog, setShowBookingsDialog] = useState(false);
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -140,6 +141,12 @@ const ClassesManagementPage = () => {
     console.log('Delete class clicked:', classItem);
     setSelectedClass(classItem);
     setShowDeleteDialog(true);
+  };
+
+  const handleViewBookings = (classItem: any) => {
+    console.log('View bookings clicked:', classItem);
+    setSelectedClass(classItem);
+    setShowBookingsDialog(true);
   };
 
   const confirmDelete = async () => {
@@ -340,6 +347,15 @@ const ClassesManagementPage = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => handleViewBookings(classItem)}
+                          className="hover:bg-blue-100 hover:text-blue-600"
+                          title="View bookings"
+                        >
+                          <Users className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
                           onClick={() => handleEditClass(classItem)}
                           className="hover:bg-gray-100"
                         >
@@ -379,6 +395,12 @@ const ClassesManagementPage = () => {
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
         className={selectedClass?.name || ''}
+      />
+
+      <ClassBookingsDialog
+        open={showBookingsDialog}
+        onOpenChange={setShowBookingsDialog}
+        classData={selectedClass}
       />
     </div>
   );
