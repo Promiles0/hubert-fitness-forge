@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { formatTimeForDisplay } from "@/utils/timeUtils";
 
 const SchedulePage = () => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDay());
@@ -45,14 +46,6 @@ const SchedulePage = () => {
     { name: "Friday", value: 5 },
     { name: "Saturday", value: 6 }
   ];
-
-  const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
 
   if (isLoading) {
     return <LoadingSpinner size={40} className="min-h-screen flex items-center justify-center" />;
@@ -108,7 +101,7 @@ const SchedulePage = () => {
                     <div className="flex items-center gap-2 text-gray-300">
                       <Clock className="h-4 w-4" />
                       <span>
-                        {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                        {formatTimeForDisplay(schedule.start_time)} - {formatTimeForDisplay(schedule.end_time)}
                       </span>
                     </div>
                     
