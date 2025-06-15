@@ -171,21 +171,21 @@ const AdminDashboardPage = () => {
   const renderDashboardContent = () => {
     if (location.pathname !== "/admin") {
       return (
-        <div className="flex items-center justify-center h-96">
-          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg">
-            <CardContent className="p-8 text-center">
+        <div className="flex items-center justify-center min-h-[60vh] px-4">
+          <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 shadow-lg w-full max-w-md">
+            <CardContent className="p-6 sm:p-8 text-center">
               <div className="mb-4">
-                <Settings className="h-16 w-16 text-fitness-red mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <Settings className="h-12 w-12 sm:h-16 sm:w-16 text-fitness-red mx-auto mb-4" />
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   Feature Under Development
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                   This section of the admin dashboard is being built. Check back soon for new features and functionality.
                 </p>
               </div>
               <Button 
                 onClick={() => navigate('/admin')}
-                className="bg-fitness-red hover:bg-red-700"
+                className="bg-fitness-red hover:bg-red-700 w-full sm:w-auto"
               >
                 Return to Dashboard
               </Button>
@@ -196,7 +196,7 @@ const AdminDashboardPage = () => {
     }
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Enhanced Stats Grid */}
         <AdminStatsGrid stats={stats} isLoading={isStatsLoading} />
 
@@ -212,7 +212,7 @@ const AdminDashboardPage = () => {
   const currentPage = navigation.find(item => item.active);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-fitness-dark flex w-full">
       {/* Sidebar */}
       <AdminSidebar
         sidebarOpen={sidebarOpen}
@@ -222,7 +222,7 @@ const AdminDashboardPage = () => {
       />
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Header */}
         <AdminHeader
           setSidebarOpen={setSidebarOpen}
@@ -232,7 +232,7 @@ const AdminDashboardPage = () => {
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-fitness-dark">
-          <div className="p-6 max-w-7xl mx-auto">
+          <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto w-full">
             {renderPageContent()}
           </div>
         </main>

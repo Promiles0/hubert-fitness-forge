@@ -208,14 +208,12 @@ const ClassesPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Classes Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white">Classes & Bookings</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-white">Classes & Bookings</h2>
         
-        <Button 
-          className="bg-fitness-red hover:bg-red-700"
-        >
+        <Button className="bg-fitness-red hover:bg-red-700 w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Add New Class
         </Button>
@@ -223,26 +221,28 @@ const ClassesPage = () => {
 
       {/* Search and Filter */}
       <Card className="bg-fitness-darkGray border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white text-lg">
-            <Filter className="inline mr-2 h-5 w-5" /> 
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-white text-base sm:text-lg">
+            <Filter className="inline mr-2 h-4 w-4 sm:h-5 sm:w-5" /> 
             Search & Filter
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Search by class name or room..."
-                  className="bg-fitness-black border-gray-700 pl-10 text-white"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+        <CardContent className="space-y-4">
+          {/* Search Input */}
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search by class name or room..."
+                className="bg-fitness-black border-gray-700 pl-10 text-white w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            
+          </div>
+          
+          {/* Filter Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select
               value={classTypeFilter || ""}
               onValueChange={(value) => setClassTypeFilter(value || null)}
@@ -250,7 +250,7 @@ const ClassesPage = () => {
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Class Type" />
               </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
+              <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
                 <SelectItem value="">All Types</SelectItem>
                 <SelectItem value="group">Group Class</SelectItem>
                 <SelectItem value="personal">Personal Training</SelectItem>
@@ -266,7 +266,7 @@ const ClassesPage = () => {
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Trainer" />
               </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
+              <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
                 <SelectItem value="">All Trainers</SelectItem>
                 {trainers?.map(trainer => (
                   <SelectItem 
@@ -295,44 +295,52 @@ const ClassesPage = () => {
               <Table>
                 <TableHeader className="bg-fitness-black">
                   <TableRow className="border-b border-gray-800 hover:bg-fitness-black/70">
-                    <TableHead className="text-white">Class Name</TableHead>
-                    <TableHead className="text-white">Type</TableHead>
-                    <TableHead className="text-white">Time</TableHead>
-                    <TableHead className="text-white">Day</TableHead>
-                    <TableHead className="text-white">Trainer</TableHead>
-                    <TableHead className="text-white">Room</TableHead>
-                    <TableHead className="text-white">Capacity</TableHead>
-                    <TableHead className="text-white">Actions</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm">Class Name</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm hidden sm:table-cell">Type</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm">Time</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm hidden md:table-cell">Day</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm hidden lg:table-cell">Trainer</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm hidden md:table-cell">Room</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm hidden sm:table-cell">Capacity</TableHead>
+                    <TableHead className="text-white text-xs sm:text-sm">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredClasses && filteredClasses.length > 0 ? (
                     filteredClasses.map((schedule) => (
                       <TableRow key={schedule.id} className="border-b border-gray-800 hover:bg-fitness-black/30">
-                        <TableCell className="text-white font-medium">
-                          {schedule.class.name}
+                        <TableCell className="text-white font-medium text-sm">
+                          <div>
+                            <div className="font-medium">{schedule.class.name}</div>
+                            <div className="text-xs text-gray-400 sm:hidden">
+                              {schedule.class.class_type} • {schedule.class.capacity} spots
+                            </div>
+                          </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Badge className={getClassTypeColor(schedule.class.class_type)}>
                             {schedule.class.class_type.charAt(0).toUpperCase() + schedule.class.class_type.slice(1)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gray-300">
-                          {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                        <TableCell className="text-gray-300 text-sm">
+                          <div>
+                            <div>{formatTime(schedule.start_time)}</div>
+                            <div className="text-xs text-gray-400">{formatTime(schedule.end_time)}</div>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-gray-300 text-sm hidden md:table-cell">
                           {getDayName(schedule.day_of_week)}
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-gray-300 text-sm hidden lg:table-cell">
                           {schedule.class.trainer 
                             ? `${schedule.class.trainer.first_name} ${schedule.class.trainer.last_name}` 
                             : "No Trainer"
                           }
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-gray-300 text-sm hidden md:table-cell">
                           {schedule.class.room || "N/A"}
                         </TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-gray-300 text-sm hidden sm:table-cell">
                           {schedule.class.capacity}
                         </TableCell>
                         <TableCell>
@@ -347,7 +355,7 @@ const ClassesPage = () => {
                                 </svg>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-fitness-black border-gray-700 text-white">
+                            <DropdownMenuContent align="end" className="bg-fitness-black border-gray-700 text-white z-50">
                               <DropdownMenuItem className="text-white hover:bg-fitness-darkGray cursor-pointer">
                                 <Edit className="mr-2 h-4 w-4" />
                                 <span>Edit Class</span>

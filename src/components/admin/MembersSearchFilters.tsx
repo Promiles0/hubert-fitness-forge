@@ -52,26 +52,28 @@ export const MembersSearchFilters = ({
 }: MembersSearchFiltersProps) => {
   return (
     <Card className="bg-fitness-darkGray border-gray-800">
-      <CardHeader>
-        <CardTitle className="text-white text-lg">
-          <Filter className="inline mr-2 h-5 w-5" /> 
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-white text-base sm:text-lg">
+          <Filter className="inline mr-2 h-4 w-4 sm:h-5 sm:w-5" /> 
           Search & Filter
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="xl:col-span-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search by name, email or phone..."
-                className="bg-fitness-black border-gray-700 pl-10 text-white"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      <CardContent className="space-y-4">
+        {/* Search Input - Full width on mobile */}
+        <div className="w-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search by name, email or phone..."
+              className="bg-fitness-black border-gray-700 pl-10 text-white w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          
+        </div>
+
+        {/* Filter Grid - Responsive layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <Select
             value={statusFilter || ""}
             onValueChange={(value) => setStatusFilter(value || null)}
@@ -79,7 +81,7 @@ export const MembersSearchFilters = ({
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-fitness-black border-gray-700 text-white">
+            <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
@@ -95,7 +97,7 @@ export const MembersSearchFilters = ({
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
               <SelectValue placeholder="Plan" />
             </SelectTrigger>
-            <SelectContent className="bg-fitness-black border-gray-700 text-white">
+            <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
               <SelectItem value="all">All Plans</SelectItem>
               {membershipPlans?.map((plan) => (
                 <SelectItem key={plan.id} value={plan.name}>
@@ -112,7 +114,7 @@ export const MembersSearchFilters = ({
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
               <SelectValue placeholder="Gender" />
             </SelectTrigger>
-            <SelectContent className="bg-fitness-black border-gray-700 text-white">
+            <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
               <SelectItem value="all">All Genders</SelectItem>
               <SelectItem value="male">Male</SelectItem>
               <SelectItem value="female">Female</SelectItem>
@@ -128,7 +130,7 @@ export const MembersSearchFilters = ({
               <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
                 <SelectValue placeholder="Trainer" />
               </SelectTrigger>
-              <SelectContent className="bg-fitness-black border-gray-700 text-white">
+              <SelectContent className="bg-fitness-black border-gray-700 text-white z-50">
                 <SelectItem value="all">All Trainers</SelectItem>
                 {trainers?.map((trainer) => (
                   <SelectItem key={trainer.id} value={`${trainer.first_name} ${trainer.last_name}`}>
