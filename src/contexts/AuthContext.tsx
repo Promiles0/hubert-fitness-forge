@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -40,6 +39,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Fetch user profile data
   const { data: profile } = useQuery({
@@ -56,32 +56,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       return data as Profile;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isInitialized,
   });
 
-  // Fetch user roles
-  const { data: userRoles = [] } = useQuery({
+  // Fetch user roles with better caching and error handling
+  const { data: userRoles = [], isLoading: rolesLoading } = useQuery({
     queryKey: ['user-roles', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      
+      console.log('Fetching roles for user:', user.id);
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
       
-      if (error) throw error;
-      return data.map(r => r.role as string);
+      if (error) {
+        console.error('Error fetching user roles:', error);
+        throw error;
+      }
+      
+      const roles = data.map(r => r.role as string);
+      console.log('User roles fetched:', roles);
+      return roles;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isInitialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setIsInitialized(true);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        if (mounted) {
+          setUser(null);
+          setIsInitialized(true);
+          setLoading(false);
+        }
+      }
     };
 
     getInitialSession();
@@ -89,13 +115,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
+        console.log('Auth state change:', event, session?.user?.id);
+        
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+          
+          // Ensure initialization is complete
+          if (!isInitialized) {
+            setIsInitialized(true);
+          }
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [isInitialized]);
 
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -104,17 +142,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     if (!error && data.user) {
-      // Check user role and redirect accordingly
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id);
-      
-      if (roles && roles.some(r => r.role === 'admin')) {
-        window.location.href = '/admin';
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Wait a moment for the auth state to be fully set
+      setTimeout(async () => {
+        // Check user role and redirect accordingly
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id);
+        
+        console.log('Login roles check:', roles);
+        
+        if (roles && roles.some(r => r.role === 'admin')) {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }, 100);
     }
     
     return { error };
@@ -137,7 +180,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasRole = (role: string) => {
-    return userRoles.includes(role);
+    // Don't check roles until they're loaded and user is initialized
+    if (!isInitialized || rolesLoading || !user) {
+      return false;
+    }
+    
+    const result = userRoles.includes(role);
+    console.log(`Checking role "${role}" for user ${user.id}:`, result, 'Available roles:', userRoles);
+    return result;
   };
 
   const isAuthenticated = !!user;
@@ -146,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     profile,
     isAuthenticated,
-    loading,
+    loading: loading || !isInitialized,
     login,
     signup,
     logout,
