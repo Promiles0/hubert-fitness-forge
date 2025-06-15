@@ -22,6 +22,8 @@ interface TrainerCardProps {
     certifications?: any;
     hourly_rate?: number;
     availability?: any;
+    phone?: string;
+    email?: string;
   };
 }
 
@@ -38,6 +40,8 @@ const TrainerCard = ({
   const certifications = trainer?.certifications ? Object.values(trainer.certifications) : [];
   const experienceYears = trainer?.experience_years || 0;
   const hourlyRate = trainer?.hourly_rate;
+  const phone = trainer?.phone;
+  const email = trainer?.email;
 
   // Generate a mock rating for demo purposes
   const rating = 4.8;
@@ -180,6 +184,40 @@ const TrainerCard = ({
         <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
           {bio}
         </p>
+
+        {/* Contact Information */}
+        {(phone || email) && (
+          <div className="space-y-3 py-4 border-t border-b border-fitness-lightGray/20">
+            <h4 className="text-white text-sm font-semibold flex items-center space-x-2">
+              <Phone size={16} className="text-fitness-red" />
+              <span>Contact Information</span>
+            </h4>
+            <div className="space-y-2">
+              {phone && (
+                <div className="flex items-center space-x-3">
+                  <Phone size={14} className="text-gray-400" />
+                  <a 
+                    href={`tel:${phone}`}
+                    className="text-gray-300 hover:text-white transition-colors text-sm"
+                  >
+                    {phone}
+                  </a>
+                </div>
+              )}
+              {email && (
+                <div className="flex items-center space-x-3">
+                  <Mail size={14} className="text-gray-400" />
+                  <a 
+                    href={`mailto:${email}`}
+                    className="text-gray-300 hover:text-white transition-colors text-sm"
+                  >
+                    {email}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-fitness-lightGray/20">

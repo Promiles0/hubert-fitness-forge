@@ -92,7 +92,9 @@ const TrainersPage = () => {
                     experience_years: trainer.experience_years,
                     certifications: trainer.certifications,
                     hourly_rate: trainer.hourly_rate,
-                    availability: trainer.availability
+                    availability: trainer.availability,
+                    phone: trainer.phone,
+                    email: trainer.email
                   }}
                 />
               );
