@@ -58,14 +58,33 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         const schedule = classData.class_schedules[0];
         console.log('Setting schedule data:', schedule);
         
-        // Extract time from timestamp properly
-        const startTime = schedule.start_time ? new Date(schedule.start_time).toTimeString().substring(0, 5) : '';
-        const endTime = schedule.end_time ? new Date(schedule.end_time).toTimeString().substring(0, 5) : '';
+        // Extract time from timestamp - handle both timestamp and time string formats
+        const extractTime = (timeValue: string) => {
+          if (!timeValue) return '';
+          
+          try {
+            // If it's already in HH:MM format, return as is
+            if (timeValue.match(/^\d{2}:\d{2}$/)) {
+              return timeValue;
+            }
+            
+            // If it's a timestamp, extract time
+            const date = new Date(timeValue);
+            if (!isNaN(date.getTime())) {
+              return date.toTimeString().substring(0, 5);
+            }
+            
+            return '';
+          } catch (error) {
+            console.error('Error extracting time:', error);
+            return '';
+          }
+        };
         
         setScheduleData({
           day_of_week: schedule.day_of_week?.toString() || '',
-          start_time: startTime,
-          end_time: endTime,
+          start_time: extractTime(schedule.start_time),
+          end_time: extractTime(schedule.end_time),
         });
       } else {
         // Reset schedule data if no schedules
@@ -89,7 +108,7 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         classId: classData.id
       });
 
-      // Update the class
+      // Update the class first
       const { error: classError } = await supabase
         .from('classes')
         .update({
@@ -108,11 +127,30 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         throw classError;
       }
 
+      console.log('Class updated successfully, now handling schedule...');
+
       // Handle schedule updates
       if (scheduleData.day_of_week && scheduleData.start_time && scheduleData.end_time) {
         console.log('Updating schedule with data:', scheduleData);
         
-        // First, delete existing schedules for this class
+        // Create time strings for today's date to ensure proper timestamp format
+        const createTimestamp = (timeString: string) => {
+          const today = new Date();
+          const [hours, minutes] = timeString.split(':');
+          today.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          return today.toISOString();
+        };
+
+        const newScheduleData = {
+          class_id: classData.id,
+          day_of_week: parseInt(scheduleData.day_of_week),
+          start_time: createTimestamp(scheduleData.start_time),
+          end_time: createTimestamp(scheduleData.end_time),
+        };
+
+        console.log('Formatted schedule data:', newScheduleData);
+
+        // Delete existing schedules for this class first
         const { error: deleteError } = await supabase
           .from('class_schedules')
           .delete()
@@ -123,23 +161,12 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
           throw deleteError;
         }
 
-        // Format times properly for PostgreSQL timestamp
-        const formatTime = (time: string) => {
-          const [hours, minutes] = time.split(':');
-          const date = new Date();
-          date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-          return date.toISOString();
-        };
+        console.log('Existing schedules deleted, inserting new schedule...');
 
-        // Then create new schedule with proper time formatting
+        // Insert new schedule
         const { error: scheduleError } = await supabase
           .from('class_schedules')
-          .insert({
-            class_id: classData.id,
-            day_of_week: parseInt(scheduleData.day_of_week),
-            start_time: formatTime(scheduleData.start_time),
-            end_time: formatTime(scheduleData.end_time),
-          });
+          .insert(newScheduleData);
 
         if (scheduleError) {
           console.error('Schedule insert error:', scheduleError);
@@ -147,9 +174,10 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         }
 
         console.log('Schedule updated successfully');
-      } else if (classData.class_schedules && classData.class_schedules.length > 0) {
+      } else if (classData.class_schedules && classData.class_schedules.length > 0 && 
+                 (!scheduleData.day_of_week || !scheduleData.start_time || !scheduleData.end_time)) {
         // If schedule fields are empty but there were existing schedules, delete them
-        console.log('Removing existing schedules as new schedule data is empty');
+        console.log('Removing existing schedules as new schedule data is incomplete');
         const { error: deleteError } = await supabase
           .from('class_schedules')
           .delete()
@@ -163,6 +191,7 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
 
       toast.success('Class updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-classes'] });
+      queryClient.invalidateQueries({ queryKey: ['class-schedules'] });
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating class:', error);
