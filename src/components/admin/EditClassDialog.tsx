@@ -57,10 +57,15 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
       if (classData.class_schedules && classData.class_schedules.length > 0) {
         const schedule = classData.class_schedules[0];
         console.log('Setting schedule data:', schedule);
+        
+        // Extract time from timestamp properly
+        const startTime = schedule.start_time ? new Date(schedule.start_time).toTimeString().substring(0, 5) : '';
+        const endTime = schedule.end_time ? new Date(schedule.end_time).toTimeString().substring(0, 5) : '';
+        
         setScheduleData({
           day_of_week: schedule.day_of_week?.toString() || '',
-          start_time: schedule.start_time?.substring(0, 5) || '',
-          end_time: schedule.end_time?.substring(0, 5) || '',
+          start_time: startTime,
+          end_time: endTime,
         });
       } else {
         // Reset schedule data if no schedules
@@ -118,14 +123,22 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
           throw deleteError;
         }
 
+        // Format times properly for PostgreSQL timestamp
+        const formatTime = (time: string) => {
+          const [hours, minutes] = time.split(':');
+          const date = new Date();
+          date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          return date.toISOString();
+        };
+
         // Then create new schedule with proper time formatting
         const { error: scheduleError } = await supabase
           .from('class_schedules')
           .insert({
             class_id: classData.id,
             day_of_week: parseInt(scheduleData.day_of_week),
-            start_time: `1970-01-01T${scheduleData.start_time}:00.000Z`,
-            end_time: `1970-01-01T${scheduleData.end_time}:00.000Z`,
+            start_time: formatTime(scheduleData.start_time),
+            end_time: formatTime(scheduleData.end_time),
           });
 
         if (scheduleError) {
