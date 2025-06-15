@@ -852,7 +852,21 @@ export type Database = {
         | "waitlisted"
         | "attended"
         | "no_show"
-      class_type: "group" | "personal" | "specialty" | "workshop"
+      class_type:
+        | "group"
+        | "personal"
+        | "specialty"
+        | "workshop"
+        | "strength"
+        | "cardio"
+        | "hiit"
+        | "yoga"
+        | "pilates"
+        | "crossfit"
+        | "spinning"
+        | "boxing"
+        | "zumba"
+        | "martial_arts"
       class_type_enum:
         | "yoga"
         | "hiit"
@@ -1014,7 +1028,22 @@ export const Constants = {
         "attended",
         "no_show",
       ],
-      class_type: ["group", "personal", "specialty", "workshop"],
+      class_type: [
+        "group",
+        "personal",
+        "specialty",
+        "workshop",
+        "strength",
+        "cardio",
+        "hiit",
+        "yoga",
+        "pilates",
+        "crossfit",
+        "spinning",
+        "boxing",
+        "zumba",
+        "martial_arts",
+      ],
       class_type_enum: [
         "yoga",
         "hiit",
