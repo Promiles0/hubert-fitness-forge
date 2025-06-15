@@ -1,7 +1,8 @@
+
 import { useEffect } from 'react';
 import { ArrowRight, Dumbbell, Users, Award, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SectionTitle from '@/components/SectionTitle';
 import ProgramCard from '@/components/ProgramCard';
 import MembershipCard from '@/components/MembershipCard';
@@ -11,7 +12,8 @@ import ScrollIndicator from '@/components/ScrollIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasRole } = useAuth();
+  const navigate = useNavigate();
   
   // Animation on scroll effect
   useEffect(() => {
@@ -34,6 +36,14 @@ const HomePage = () => {
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleGoToDashboard = () => {
+    if (hasRole('admin')) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <>
@@ -61,11 +71,12 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in px-4 sm:px-0" style={{animationDelay: '0.4s'}}>
               {isAuthenticated ? (
-                <Link to="/dashboard" className="w-full sm:w-auto">
-                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-base sm:text-lg py-4 sm:py-6 px-6 sm:px-8 w-full sm:w-auto">
-                    Go to Dashboard
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={handleGoToDashboard}
+                  className="bg-fitness-red hover:bg-red-700 text-white font-bold text-base sm:text-lg py-4 sm:py-6 px-6 sm:px-8 w-full sm:w-auto"
+                >
+                  Go to Dashboard
+                </Button>
               ) : (
                 <>
                   <Link to="/signup" className="w-full sm:w-auto">
@@ -396,11 +407,12 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               {isAuthenticated ? (
-                <Link to="/dashboard" className="w-full sm:w-auto">
-                  <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-base sm:text-lg py-4 sm:py-6 px-6 sm:px-8 w-full sm:w-auto">
-                    Go to Dashboard
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={handleGoToDashboard}
+                  className="bg-fitness-red hover:bg-red-700 text-white font-bold text-base sm:text-lg py-4 sm:py-6 px-6 sm:px-8 w-full sm:w-auto"
+                >
+                  Go to Dashboard
+                </Button>
               ) : (
                 <Link to="/signup" className="w-full sm:w-auto">
                   <Button className="bg-fitness-red hover:bg-red-700 text-white font-bold text-base sm:text-lg py-4 sm:py-6 px-6 sm:px-8 w-full sm:w-auto">
