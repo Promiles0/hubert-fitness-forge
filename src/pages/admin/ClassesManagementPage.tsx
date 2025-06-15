@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,11 +116,13 @@ const ClassesManagementPage = () => {
   };
 
   const handleEditClass = (classItem: any) => {
+    console.log('Edit class clicked:', classItem);
     setSelectedClass(classItem);
     setShowEditDialog(true);
   };
 
   const handleDeleteClass = (classItem: any) => {
+    console.log('Delete class clicked:', classItem);
     setSelectedClass(classItem);
     setShowDeleteDialog(true);
   };
@@ -310,16 +313,15 @@ const ClassesManagementPage = () => {
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleEditClass(classItem)}
+                        className="hover:bg-gray-100"
                       >
                         <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <UserCheck className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleDeleteClass(classItem)}
+                        className="hover:bg-red-100 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -337,22 +339,18 @@ const ClassesManagementPage = () => {
         onOpenChange={setShowAddDialog} 
       />
 
-      {selectedClass && (
-        <EditClassDialog
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          classData={selectedClass}
-        />
-      )}
+      <EditClassDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        classData={selectedClass}
+      />
 
-      {selectedClass && (
-        <DeleteClassDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={confirmDelete}
-          className={selectedClass.name}
-        />
-      )}
+      <DeleteClassDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        className={selectedClass?.name || ''}
+      />
     </div>
   );
 };
