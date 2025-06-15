@@ -43,6 +43,29 @@ const SchedulePage = () => {
     },
   });
 
+  // Fetch current bookings for capacity checking
+  const { data: currentBookings } = useQuery({
+    queryKey: ['current-bookings', selectedDay],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('class_schedule_id')
+        .eq('status', 'confirmed');
+
+      if (error) throw error;
+
+      // Count bookings per class schedule
+      const counts: Record<string, number> = {};
+      data.forEach(booking => {
+        if (booking.class_schedule_id) {
+          counts[booking.class_schedule_id] = (counts[booking.class_schedule_id] || 0) + 1;
+        }
+      });
+
+      return counts;
+    },
+  });
+
   const weekDays = [
     { name: "Sunday", value: 0 },
     { name: "Monday", value: 1 },
@@ -53,11 +76,27 @@ const SchedulePage = () => {
     { name: "Saturday", value: 6 }
   ];
 
+  const isClassFull = (schedule: any) => {
+    const currentBookingCount = currentBookings?.[schedule.id] || 0;
+    return currentBookingCount >= schedule.classes.capacity;
+  };
+
+  const getAvailableSpots = (schedule: any) => {
+    const currentBookingCount = currentBookings?.[schedule.id] || 0;
+    return Math.max(0, schedule.classes.capacity - currentBookingCount);
+  };
+
   const handleReserveSpot = (schedule: any) => {
     // Check if user is authenticated before allowing reservation
     if (!isAuthenticated) {
       toast.error("Please log in to reserve your spot!");
       navigate('/login');
+      return;
+    }
+
+    // Check if class is full
+    if (isClassFull(schedule)) {
+      toast.error("Sorry, this class is fully booked!");
       return;
     }
 
@@ -119,7 +158,8 @@ const SchedulePage = () => {
       const updatedBookings = [...existingBookings, booking];
       localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
       
-      toast.success(`Successfully reserved your spot in ${schedule.classes.name}!`);
+      const availableSpots = getAvailableSpots(schedule);
+      toast.success(`Successfully reserved your spot in ${schedule.classes.name}! ${availableSpots - 1} spots remaining.`);
       
       // Reset booking state after a short delay
       setTimeout(() => {
@@ -154,6 +194,8 @@ const SchedulePage = () => {
                 schedule={schedule}
                 isBooking={bookingStates[schedule.id] || false}
                 onReserveSpot={handleReserveSpot}
+                isFullyBooked={isClassFull(schedule)}
+                availableSpots={getAvailableSpots(schedule)}
               />
             ))
           ) : (

@@ -69,7 +69,7 @@ const ClassesManagementPage = () => {
     },
   });
 
-  // Fetch bookings count for each class
+  // Fetch bookings count for each class schedule
   const { data: bookingsCounts } = useQuery({
     queryKey: ['admin-bookings-counts'],
     queryFn: async () => {
@@ -113,6 +113,21 @@ const ClassesManagementPage = () => {
   const getDayName = (dayNumber: number) => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[dayNumber] || 'Unknown';
+  };
+
+  const getBookingStatus = (classItem: any) => {
+    if (!classItem.class_schedules || classItem.class_schedules.length === 0) {
+      return { totalBookings: 0, isFullyBooked: false, availableSpots: classItem.capacity };
+    }
+
+    const totalBookings = classItem.class_schedules.reduce((total, schedule) => 
+      total + (bookingsCounts?.[schedule.id] || 0), 0
+    );
+
+    const isFullyBooked = totalBookings >= classItem.capacity;
+    const availableSpots = Math.max(0, classItem.capacity - totalBookings);
+
+    return { totalBookings, isFullyBooked, availableSpots };
   };
 
   const handleEditClass = (classItem: any) => {
@@ -245,90 +260,104 @@ const ClassesManagementPage = () => {
                 <TableHead>Trainer</TableHead>
                 <TableHead>Schedule</TableHead>
                 <TableHead>Capacity</TableHead>
-                <TableHead>Bookings</TableHead>
+                <TableHead>Booking Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {classes?.map((classItem) => (
-                <TableRow key={classItem.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{classItem.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {classItem.duration_minutes} minutes
+              {classes?.map((classItem) => {
+                const bookingStatus = getBookingStatus(classItem);
+                return (
+                  <TableRow key={classItem.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{classItem.name}</div>
+                        <div className="text-sm text-gray-500">
+                          {classItem.duration_minutes} minutes
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getClassTypeColor(classItem.class_type)}>
-                      {classItem.class_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {classItem.trainers ? 
-                      `${classItem.trainers.first_name} ${classItem.trainers.last_name}` : 
-                      'No Trainer'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {classItem.class_schedules && classItem.class_schedules.length > 0 ? (
-                      <div className="space-y-1">
-                        {classItem.class_schedules.map((schedule, index) => (
-                          <div key={index} className="text-sm">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-3 w-3" />
-                              {getDayName(schedule.day_of_week)}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3 w-3" />
-                              {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No Schedule</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      {classItem.capacity}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4" />
-                      {classItem.class_schedules ? 
-                        classItem.class_schedules.reduce((total, schedule) => 
-                          total + (bookingsCounts?.[schedule.id] || 0), 0
-                        ) : 0
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getClassTypeColor(classItem.class_type)}>
+                        {classItem.class_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {classItem.trainers ? 
+                        `${classItem.trainers.first_name} ${classItem.trainers.last_name}` : 
+                        'No Trainer'
                       }
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEditClass(classItem)}
-                        className="hover:bg-gray-100"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteClass(classItem)}
-                        className="hover:bg-red-100 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      {classItem.class_schedules && classItem.class_schedules.length > 0 ? (
+                        <div className="space-y-1">
+                          {classItem.class_schedules.map((schedule, index) => (
+                            <div key={index} className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-3 w-3" />
+                                {getDayName(schedule.day_of_week)}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3" />
+                                {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500">No Schedule</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {classItem.capacity}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4" />
+                          <span className="font-medium">
+                            {bookingStatus.totalBookings}/{classItem.capacity}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {bookingStatus.isFullyBooked ? (
+                            <Badge className="bg-red-100 text-red-800 text-xs">
+                              Fully Booked
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              {bookingStatus.availableSpots} spots left
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditClass(classItem)}
+                          className="hover:bg-gray-100"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteClass(classItem)}
+                          className="hover:bg-red-100 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
