@@ -1,5 +1,4 @@
-
-import { Star } from 'lucide-react';
+import { Star, Instagram, Facebook, Linkedin } from 'lucide-react';
 
 interface TrainerCardImageProps {
   image: string;
