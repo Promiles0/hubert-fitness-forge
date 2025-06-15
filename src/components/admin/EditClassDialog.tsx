@@ -35,7 +35,6 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
     day_of_week: '',
     start_time: '',
     end_time: '',
-    recurring: false,
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,11 +56,18 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
       // Set schedule data if available
       if (classData.class_schedules && classData.class_schedules.length > 0) {
         const schedule = classData.class_schedules[0];
+        console.log('Setting schedule data:', schedule);
         setScheduleData({
           day_of_week: schedule.day_of_week?.toString() || '',
           start_time: schedule.start_time?.substring(0, 5) || '',
           end_time: schedule.end_time?.substring(0, 5) || '',
-          recurring: classData.recurring || false,
+        });
+      } else {
+        // Reset schedule data if no schedules
+        setScheduleData({
+          day_of_week: '',
+          start_time: '',
+          end_time: '',
         });
       }
     }
@@ -89,7 +95,6 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
           duration_minutes: parseInt(formData.duration_minutes),
           room: formData.room,
           trainer_id: formData.trainer_id || null,
-          recurring: scheduleData.recurring,
         })
         .eq('id', classData.id);
 
@@ -98,9 +103,11 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
         throw classError;
       }
 
-      // Update schedule if provided
+      // Handle schedule updates
       if (scheduleData.day_of_week && scheduleData.start_time && scheduleData.end_time) {
-        // First, delete existing schedules
+        console.log('Updating schedule with data:', scheduleData);
+        
+        // First, delete existing schedules for this class
         const { error: deleteError } = await supabase
           .from('class_schedules')
           .delete()
@@ -111,19 +118,33 @@ const EditClassDialog = ({ open, onOpenChange, classData }: EditClassDialogProps
           throw deleteError;
         }
 
-        // Then create new schedule
+        // Then create new schedule with proper time formatting
         const { error: scheduleError } = await supabase
           .from('class_schedules')
           .insert({
             class_id: classData.id,
             day_of_week: parseInt(scheduleData.day_of_week),
-            start_time: scheduleData.start_time + ':00',
-            end_time: scheduleData.end_time + ':00',
+            start_time: `1970-01-01T${scheduleData.start_time}:00.000Z`,
+            end_time: `1970-01-01T${scheduleData.end_time}:00.000Z`,
           });
 
         if (scheduleError) {
           console.error('Schedule insert error:', scheduleError);
           throw scheduleError;
+        }
+
+        console.log('Schedule updated successfully');
+      } else if (classData.class_schedules && classData.class_schedules.length > 0) {
+        // If schedule fields are empty but there were existing schedules, delete them
+        console.log('Removing existing schedules as new schedule data is empty');
+        const { error: deleteError } = await supabase
+          .from('class_schedules')
+          .delete()
+          .eq('class_id', classData.id);
+
+        if (deleteError) {
+          console.error('Schedule delete error:', deleteError);
+          throw deleteError;
         }
       }
 
