@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { timeStringToTimestamp } from "@/utils/timeUtils";
 
 interface AddClassDialogProps {
   open: boolean;
@@ -62,13 +63,17 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
 
       // Insert schedule if provided
       if (formData.day_of_week && formData.start_time && formData.end_time) {
+        const dayOfWeek = parseInt(formData.day_of_week);
+        const startTimestamp = timeStringToTimestamp(formData.start_time, dayOfWeek);
+        const endTimestamp = timeStringToTimestamp(formData.end_time, dayOfWeek);
+
         const { error: scheduleError } = await supabase
           .from('class_schedules')
           .insert({
             class_id: classData.id,
-            day_of_week: parseInt(formData.day_of_week),
-            start_time: formData.start_time,
-            end_time: formData.end_time
+            day_of_week: dayOfWeek,
+            start_time: startTimestamp,
+            end_time: endTimestamp
           });
 
         if (scheduleError) throw scheduleError;
@@ -77,6 +82,7 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
       toast.success('Class added successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-classes'] });
       queryClient.invalidateQueries({ queryKey: ['admin-comprehensive-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
       
       // Reset form
       setFormData({
