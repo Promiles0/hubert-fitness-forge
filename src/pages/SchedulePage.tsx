@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, Clock, Users, MapPin, Star, Zap, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -31,7 +32,7 @@ const SchedulePage = () => {
             capacity,
             duration_minutes,
             room,
-            trainers(first_name, last_name)
+            trainers(first_name, last_name, photo_url)
           )
         `)
         .eq('day_of_week', selectedDay)
@@ -281,15 +282,25 @@ const SchedulePage = () => {
                         </div>
                       </div>
                       
-                      {/* Enhanced Trainer Card - Handle null trainer safely */}
+                      {/* Enhanced Trainer Card with Profile Picture */}
                       <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-fitness-red/10 via-red-500/5 to-fitness-red/10 rounded-xl border border-fitness-red/20 backdrop-blur-sm group-hover:border-fitness-red/40 transition-all duration-500">
                         <div className="relative">
-                          <div className="w-12 h-12 bg-gradient-to-br from-fitness-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {schedule.classes.trainers && schedule.classes.trainers.first_name 
-                              ? schedule.classes.trainers.first_name.charAt(0)
-                              : 'T'
-                            }
-                          </div>
+                          <Avatar className="w-12 h-12 border-2 border-fitness-red/30">
+                            <AvatarImage 
+                              src={schedule.classes.trainers?.photo_url || undefined}
+                              alt={schedule.classes.trainers && schedule.classes.trainers.first_name 
+                                ? `${schedule.classes.trainers.first_name} ${schedule.classes.trainers.last_name || ''}`
+                                : 'Staff Trainer'
+                              }
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-fitness-red to-red-600 text-white font-bold text-lg">
+                              {schedule.classes.trainers && schedule.classes.trainers.first_name 
+                                ? schedule.classes.trainers.first_name.charAt(0)
+                                : 'T'
+                              }
+                            </AvatarFallback>
+                          </Avatar>
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
                         </div>
                         <div className="flex-1">
