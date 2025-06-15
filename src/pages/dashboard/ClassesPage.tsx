@@ -104,43 +104,43 @@ const ClassesPage = () => {
 
   const BookingCard = ({ booking, showCancel = false }: { booking: Booking; showCancel?: boolean }) => (
     <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{booking.className}</h4>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">with {booking.trainer}</p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">{booking.className}</h4>
+            <p className="text-gray-600 dark:text-gray-400 text-sm truncate">with {booking.trainer}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className={getLevelColor(booking.level)}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={`${getLevelColor(booking.level)} text-xs`}>
               {booking.level}
             </Badge>
             {booking.status === 'cancelled' && (
-              <Badge variant="destructive">Cancelled</Badge>
+              <Badge variant="destructive" className="text-xs">Cancelled</Badge>
             )}
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
           <div className="space-y-2">
             <div className="flex items-center text-sm">
-              <Calendar className="h-4 w-4 mr-2 text-fitness-red" />
-              <span className="text-gray-900 dark:text-white">{booking.dateFormatted}</span>
+              <Calendar className="h-4 w-4 mr-2 text-fitness-red flex-shrink-0" />
+              <span className="text-gray-900 dark:text-white truncate">{booking.dateFormatted}</span>
             </div>
             <div className="flex items-center text-sm">
-              <Clock className="h-4 w-4 mr-2 text-fitness-red" />
-              <span className="text-gray-900 dark:text-white">{booking.time} ({booking.duration})</span>
+              <Clock className="h-4 w-4 mr-2 text-fitness-red flex-shrink-0" />
+              <span className="text-gray-900 dark:text-white truncate">{booking.time} ({booking.duration})</span>
             </div>
           </div>
           <div className="space-y-2">
             {booking.room && (
               <div className="flex items-center text-sm">
-                <MapPin className="h-4 w-4 mr-2 text-fitness-red" />
-                <span className="text-gray-900 dark:text-white">{booking.room}</span>
+                <MapPin className="h-4 w-4 mr-2 text-fitness-red flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white truncate">{booking.room}</span>
               </div>
             )}
             <div className="flex items-center text-sm">
-              <User className="h-4 w-4 mr-2 text-fitness-red" />
-              <span className="text-gray-900 dark:text-white">{booking.category}</span>
+              <User className="h-4 w-4 mr-2 text-fitness-red flex-shrink-0" />
+              <span className="text-gray-900 dark:text-white truncate">{booking.category}</span>
             </div>
           </div>
         </div>
@@ -149,7 +149,7 @@ const ClassesPage = () => {
           <Button
             variant="outline"
             size="sm"
-            className="w-full border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 min-h-[44px]"
             onClick={() => handleCancelClass(booking)}
           >
             <X className="h-4 w-4 mr-2" />
@@ -169,21 +169,30 @@ const ClassesPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Classes</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage your booked fitness classes</p>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">My Classes</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage your booked fitness classes</p>
       </div>
 
       <Tabs defaultValue="upcoming" className="space-y-4">
-        <TabsList className="bg-white dark:bg-fitness-darkGray border border-gray-200 dark:border-gray-800">
-          <TabsTrigger value="upcoming" className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white">
+        <TabsList className="bg-white dark:bg-fitness-darkGray border border-gray-200 dark:border-gray-800 w-full sm:w-auto">
+          <TabsTrigger 
+            value="upcoming" 
+            className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-1 sm:flex-none text-xs sm:text-sm"
+          >
             Upcoming ({upcomingBookings.length})
           </TabsTrigger>
-          <TabsTrigger value="past" className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white">
-            Past Classes ({pastBookings.length})
+          <TabsTrigger 
+            value="past" 
+            className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-1 sm:flex-none text-xs sm:text-sm"
+          >
+            Past ({pastBookings.length})
           </TabsTrigger>
-          <TabsTrigger value="cancelled" className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white">
+          <TabsTrigger 
+            value="cancelled" 
+            className="text-gray-900 dark:text-white data-[state=active]:bg-fitness-red data-[state=active]:text-white flex-1 sm:flex-none text-xs sm:text-sm"
+          >
             Cancelled ({cancelledBookings.length})
           </TabsTrigger>
         </TabsList>
@@ -197,12 +206,12 @@ const ClassesPage = () => {
             </div>
           ) : (
             <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <Calendar className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-gray-900 dark:text-white font-semibold mb-2">No upcoming classes</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Book a class to start your fitness journey</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm sm:text-base">Book a class to start your fitness journey</p>
                 <Button 
-                  className="bg-fitness-red hover:bg-red-700"
+                  className="bg-fitness-red hover:bg-red-700 min-h-[44px]"
                   onClick={() => window.location.href = '/schedule'}
                 >
                   Browse Classes
@@ -221,10 +230,10 @@ const ClassesPage = () => {
             </div>
           ) : (
             <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <Clock className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-gray-900 dark:text-white font-semibold mb-2">No past classes</h3>
-                <p className="text-gray-600 dark:text-gray-400">Your completed classes will appear here</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Your completed classes will appear here</p>
               </CardContent>
             </Card>
           )}
@@ -239,10 +248,10 @@ const ClassesPage = () => {
             </div>
           ) : (
             <Card className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
-              <CardContent className="p-8 text-center">
+              <CardContent className="p-6 sm:p-8 text-center">
                 <X className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-gray-900 dark:text-white font-semibold mb-2">No cancelled classes</h3>
-                <p className="text-gray-600 dark:text-gray-400">Cancelled classes will appear here</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Cancelled classes will appear here</p>
               </CardContent>
             </Card>
           )}
@@ -251,21 +260,21 @@ const ClassesPage = () => {
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <AlertDialogContent className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800">
+        <AlertDialogContent className="bg-white dark:bg-fitness-darkGray border-gray-200 dark:border-gray-800 mx-4 sm:mx-auto max-w-md sm:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-900 dark:text-white">Cancel Class</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+            <AlertDialogTitle className="text-gray-900 dark:text-white text-lg sm:text-xl">Cancel Class</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
               Are you sure you want to cancel "{selectedBooking?.className}" scheduled for {selectedBooking?.dateFormatted} at {selectedBooking?.time}?
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel className="border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 w-full sm:w-auto min-h-[44px]">
               Keep Class
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmCancelClass}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto min-h-[44px]"
             >
               Cancel Class
             </AlertDialogAction>
