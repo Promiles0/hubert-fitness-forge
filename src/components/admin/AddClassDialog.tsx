@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -10,13 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { timeStringToTimestamp } from "@/utils/timeUtils";
+import AddClassFormFields from "./AddClassFormFields";
+import TrainerSelector from "./TrainerSelector";
+import ClassScheduleSection from "./ClassScheduleSection";
 
 interface AddClassDialogProps {
   open: boolean;
@@ -38,21 +37,6 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
-
-  // Fetch trainers from Supabase
-  const { data: trainers, isLoading: trainersLoading } = useQuery({
-    queryKey: ['trainers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('trainers')
-        .select('id, first_name, last_name')
-        .eq('is_active', true)
-        .order('first_name');
-
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,131 +122,24 @@ const AddClassDialog = ({ open, onOpenChange }: AddClassDialogProps) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Class Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="class_type">Class Type *</Label>
-              <Select value={formData.class_type} onValueChange={(value) => setFormData({ ...formData, class_type: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yoga">Yoga</SelectItem>
-                  <SelectItem value="hiit">HIIT</SelectItem>
-                  <SelectItem value="cardio">Cardio</SelectItem>
-                  <SelectItem value="strength">Strength</SelectItem>
-                  <SelectItem value="pilates">Pilates</SelectItem>
-                  <SelectItem value="zumba">Zumba</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <AddClassFormFields 
+            formData={formData}
+            onFormDataChange={setFormData}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
-          </div>
+          <TrainerSelector
+            selectedTrainerId={formData.trainer_id}
+            onTrainerChange={(trainerId) => setFormData({ ...formData, trainer_id: trainerId })}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="trainer">Trainer *</Label>
-            <Select 
-              value={formData.trainer_id} 
-              onValueChange={(value) => setFormData({ ...formData, trainer_id: value })}
-              disabled={trainersLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={trainersLoading ? "Loading trainers..." : "Select trainer"} />
-              </SelectTrigger>
-              <SelectContent>
-                {trainers?.map((trainer) => (
-                  <SelectItem key={trainer.id} value={trainer.id}>
-                    {trainer.first_name} {trainer.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Capacity *</Label>
-              <Input
-                id="capacity"
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration (min) *</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="room">Room</Label>
-              <Input
-                id="room"
-                value={formData.room}
-                onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Schedule (Optional)</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Select value={formData.day_of_week} onValueChange={(value) => setFormData({ ...formData, day_of_week: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Day" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Sunday</SelectItem>
-                  <SelectItem value="1">Monday</SelectItem>
-                  <SelectItem value="2">Tuesday</SelectItem>
-                  <SelectItem value="3">Wednesday</SelectItem>
-                  <SelectItem value="4">Thursday</SelectItem>
-                  <SelectItem value="5">Friday</SelectItem>
-                  <SelectItem value="6">Saturday</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Input
-                type="time"
-                placeholder="Start time"
-                value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-              />
-              
-              <Input
-                type="time"
-                placeholder="End time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-              />
-            </div>
-          </div>
+          <ClassScheduleSection
+            scheduleData={{
+              day_of_week: formData.day_of_week,
+              start_time: formData.start_time,
+              end_time: formData.end_time
+            }}
+            onScheduleChange={(scheduleData) => setFormData({ ...formData, ...scheduleData })}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
