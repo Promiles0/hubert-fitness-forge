@@ -53,20 +53,6 @@ const SchedulePage = () => {
     { name: "Saturday", value: 6 }
   ];
 
-  const handleEditClass = (schedule: any) => {
-    console.log('Edit class clicked:', schedule);
-    toast.info("Edit functionality not available on schedule page. Please use admin panel.");
-    // In a real app, you might navigate to admin panel or show an edit modal
-    // navigate('/admin/classes');
-  };
-
-  const handleDeleteClass = (schedule: any) => {
-    console.log('Delete class clicked:', schedule);
-    toast.info("Delete functionality not available on schedule page. Please use admin panel.");
-    // In a real app, you might show a confirmation dialog or navigate to admin panel
-    // navigate('/admin/classes');
-  };
-
   const handleReserveSpot = (schedule: any) => {
     // Check if user is authenticated before allowing reservation
     if (!isAuthenticated) {
@@ -168,9 +154,6 @@ const SchedulePage = () => {
                 schedule={schedule}
                 isBooking={bookingStates[schedule.id] || false}
                 onReserveSpot={handleReserveSpot}
-                onEdit={handleEditClass}
-                onDelete={handleDeleteClass}
-                showEditDelete={false} // Set to true if you want to show edit/delete buttons
               />
             ))
           ) : (
