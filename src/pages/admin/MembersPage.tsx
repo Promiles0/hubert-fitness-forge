@@ -123,6 +123,20 @@ const MembersPage = () => {
     },
   });
 
+  // Fetch trainers for filter dropdown
+  const { data: trainers } = useQuery({
+    queryKey: ['trainers-for-filter'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trainers')
+        .select('id, first_name, last_name')
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Block/Unblock user mutation
   const blockUserMutation = useMutation({
     mutationFn: async ({ memberId, block }: { memberId: string; block: boolean }) => {
@@ -252,7 +266,10 @@ const MembersPage = () => {
         setPlanFilter={setPlanFilter}
         genderFilter={genderFilter}
         setGenderFilter={setGenderFilter}
+        trainerFilter={trainerFilter}
+        setTrainerFilter={setTrainerFilter}
         membershipPlans={membershipPlans}
+        trainers={trainers}
       />
 
       {/* Members Table */}

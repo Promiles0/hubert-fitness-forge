@@ -15,6 +15,12 @@ interface MembershipPlan {
   name: string;
 }
 
+interface Trainer {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 interface MembersSearchFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -24,7 +30,10 @@ interface MembersSearchFiltersProps {
   setPlanFilter: (plan: string | null) => void;
   genderFilter: string | null;
   setGenderFilter: (gender: string | null) => void;
+  trainerFilter?: string | null;
+  setTrainerFilter?: (trainer: string | null) => void;
   membershipPlans: MembershipPlan[] | undefined;
+  trainers?: Trainer[] | undefined;
 }
 
 export const MembersSearchFilters = ({
@@ -36,19 +45,22 @@ export const MembersSearchFilters = ({
   setPlanFilter,
   genderFilter,
   setGenderFilter,
+  trainerFilter,
+  setTrainerFilter,
   membershipPlans,
+  trainers
 }: MembersSearchFiltersProps) => {
   return (
     <Card className="bg-fitness-darkGray border-gray-800">
       <CardHeader>
         <CardTitle className="text-white text-lg">
-          <Filter className="inline mr-2 h-5 w-5" />
+          <Filter className="inline mr-2 h-5 w-5" /> 
           Search & Filter
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="md:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="xl:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
               <Input
@@ -62,7 +74,7 @@ export const MembersSearchFilters = ({
           
           <Select
             value={statusFilter || ""}
-            onValueChange={(value) => setStatusFilter(value === "" ? null : value)}
+            onValueChange={(value) => setStatusFilter(value || null)}
           >
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
               <SelectValue placeholder="Status" />
@@ -70,22 +82,22 @@ export const MembersSearchFilters = ({
             <SelectContent className="bg-fitness-black border-gray-700 text-white">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
             </SelectContent>
           </Select>
           
           <Select
             value={planFilter || ""}
-            onValueChange={(value) => setPlanFilter(value === "" ? null : value)}
+            onValueChange={(value) => setPlanFilter(value || null)}
           >
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
-              <SelectValue placeholder="Membership Plan" />
+              <SelectValue placeholder="Plan" />
             </SelectTrigger>
             <SelectContent className="bg-fitness-black border-gray-700 text-white">
               <SelectItem value="all">All Plans</SelectItem>
-              {membershipPlans?.map(plan => (
+              {membershipPlans?.map((plan) => (
                 <SelectItem key={plan.id} value={plan.name}>
                   {plan.name}
                 </SelectItem>
@@ -95,7 +107,7 @@ export const MembersSearchFilters = ({
           
           <Select
             value={genderFilter || ""}
-            onValueChange={(value) => setGenderFilter(value === "" ? null : value)}
+            onValueChange={(value) => setGenderFilter(value || null)}
           >
             <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
               <SelectValue placeholder="Gender" />
@@ -105,9 +117,27 @@ export const MembersSearchFilters = ({
               <SelectItem value="male">Male</SelectItem>
               <SelectItem value="female">Female</SelectItem>
               <SelectItem value="other">Other</SelectItem>
-              <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
             </SelectContent>
           </Select>
+
+          {setTrainerFilter && (
+            <Select
+              value={trainerFilter || ""}
+              onValueChange={(value) => setTrainerFilter(value || null)}
+            >
+              <SelectTrigger className="bg-fitness-black border-gray-700 text-white">
+                <SelectValue placeholder="Trainer" />
+              </SelectTrigger>
+              <SelectContent className="bg-fitness-black border-gray-700 text-white">
+                <SelectItem value="all">All Trainers</SelectItem>
+                {trainers?.map((trainer) => (
+                  <SelectItem key={trainer.id} value={`${trainer.first_name} ${trainer.last_name}`}>
+                    {trainer.first_name} {trainer.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardContent>
     </Card>
