@@ -25,39 +25,43 @@ const MessagesManagementPage = () => {
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['admin-conversations', searchTerm],
     queryFn: async () => {
-      let query = supabase
+      // First get conversations
+      const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
         .select(`
           *,
-          messages!inner(
-            content,
-            sender_id,
-            sent_at,
-            is_read
-          ),
           profiles!conversations_user_id_fkey(
             name
           )
         `)
         .order('last_message_at', { ascending: false });
 
-      const { data, error } = await query;
-      if (error) throw error;
+      if (conversationsError) throw conversationsError;
 
-      // Process conversations to get user names and stats
-      const processedConversations = data.map((conv: any) => {
-        const messages = conv.messages || [];
-        const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-        const unreadCount = messages.filter((msg: any) => !msg.is_read && msg.sender_id !== conv.user_id).length;
+      // Then get messages for each conversation
+      const processedConversations = await Promise.all(
+        conversationsData.map(async (conv: any) => {
+          const { data: messages, error: messagesError } = await supabase
+            .from('messages')
+            .select('content, sender_id, sent_at, is_read')
+            .eq('conversation_id', conv.id)
+            .order('sent_at', { ascending: true });
 
-        return {
-          ...conv,
-          user_name: conv.profiles?.name || 'Unknown User',
-          last_message: lastMessage,
-          unread_count: unreadCount,
-          total_messages: messages.length
-        };
-      });
+          if (messagesError) throw messagesError;
+
+          const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+          const unreadCount = messages.filter((msg: any) => !msg.is_read && msg.sender_id !== conv.user_id).length;
+
+          return {
+            ...conv,
+            user_name: conv.profiles?.name || 'Unknown User',
+            last_message: lastMessage,
+            unread_count: unreadCount,
+            total_messages: messages.length,
+            messages
+          };
+        })
+      );
 
       return processedConversations.filter(conv => 
         searchTerm === "" || 
