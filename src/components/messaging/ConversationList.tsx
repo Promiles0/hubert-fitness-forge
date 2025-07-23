@@ -127,105 +127,110 @@ const ConversationList = ({ selectedConversationId, onSelectConversation, onNewC
   };
 
   return (
-    <Card className="h-full bg-fitness-darkGray border-gray-800">
-      <CardContent className="p-0 h-full flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Messages</h2>
-            <Button 
-              onClick={onNewConversation}
-              size="sm" 
-              className="bg-fitness-red hover:bg-red-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New
-            </Button>
-          </div>
-          
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search conversations..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-fitness-black border-gray-700 text-white pl-10"
-            />
-          </div>
+    <div className="h-full flex flex-col bg-card">
+      {/* Header */}
+      <div className="flex-shrink-0 p-4 border-b border-border/20">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Messages</h2>
+          <Button 
+            onClick={onNewConversation}
+            size="sm" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New
+          </Button>
         </div>
+        
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-background border-border text-foreground pl-10 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      </div>
 
-        {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 text-center text-gray-400">Loading conversations...</div>
-          ) : filteredConversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-400">
+      {/* Conversations List - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-center text-muted-foreground">
+              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p>Loading conversations...</p>
+            </div>
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-center text-muted-foreground p-6">
               <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No conversations yet</p>
+              <p className="font-medium">No conversations yet</p>
               <p className="text-sm">Start a new conversation</p>
             </div>
-          ) : (
-            <div className="space-y-1 p-2">
-              {filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => onSelectConversation(conversation.id)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedConversationId === conversation.id
-                      ? "bg-fitness-red bg-opacity-20 border-l-4 border-fitness-red"
-                      : "hover:bg-gray-800"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-fitness-red text-white">
-                          {conversation.is_admin_conversation ? (
-                            <Users className="h-5 w-5" />
-                          ) : (
-                            conversation.participant_name.split(' ').map(n => n[0]).join('').toUpperCase()
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-fitness-darkGray"></div>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <p className="text-white font-medium truncate">
-                            {conversation.participant_name}
-                          </p>
-                          {conversation.is_admin_conversation && (
-                            <Badge variant="secondary" className="text-xs">Admin</Badge>
-                          )}
-                        </div>
-                        <div className="text-right flex flex-col items-end gap-1">
-                          <p className="text-xs text-gray-400">
-                            {conversation.last_message ? formatTime(conversation.last_message.sent_at) : ''}
-                          </p>
-                          {conversation.unread_count > 0 && (
-                            <Badge className="bg-fitness-red text-white text-xs min-w-5 h-5 flex items-center justify-center p-0">
-                              {conversation.unread_count}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {conversation.last_message && (
-                        <p className="text-sm text-gray-400 truncate mt-1">
-                          {conversation.last_message.content}
+          </div>
+        ) : (
+          <div className="space-y-1 p-2">
+            {filteredConversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                onClick={() => onSelectConversation(conversation.id)}
+                className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                  selectedConversationId === conversation.id
+                    ? "bg-primary/10 border-l-4 border-primary shadow-sm"
+                    : "hover:bg-muted/50 active:bg-muted/70"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                        {conversation.is_admin_conversation ? (
+                          <Users className="h-5 w-5" />
+                        ) : (
+                          conversation.participant_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-card shadow-sm"></div>
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-foreground font-medium truncate">
+                          {conversation.participant_name}
                         </p>
-                      )}
+                        {conversation.is_admin_conversation && (
+                          <Badge variant="secondary" className="text-xs shrink-0">Admin</Badge>
+                        )}
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1 shrink-0">
+                        <p className="text-xs text-muted-foreground">
+                          {conversation.last_message ? formatTime(conversation.last_message.sent_at) : ''}
+                        </p>
+                        {conversation.unread_count > 0 && (
+                          <Badge className="bg-primary text-primary-foreground text-xs min-w-5 h-5 flex items-center justify-center p-0 rounded-full">
+                            {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    {conversation.last_message && (
+                      <p className="text-sm text-muted-foreground truncate leading-relaxed">
+                        {conversation.last_message.content}
+                      </p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
