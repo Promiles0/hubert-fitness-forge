@@ -25,22 +25,25 @@ const MessagesManagementPage = () => {
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['admin-conversations', searchTerm],
     queryFn: async () => {
-      // First get conversations
+      // First get all conversations
       const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
-        .select(`
-          *,
-          profiles!conversations_user_id_fkey(
-            name
-          )
-        `)
+        .select('*')
         .order('last_message_at', { ascending: false });
 
       if (conversationsError) throw conversationsError;
 
-      // Then get messages for each conversation
+      // Then get user profiles and messages for each conversation
       const processedConversations = await Promise.all(
         conversationsData.map(async (conv: any) => {
+          // Get user profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', conv.user_id)
+            .single();
+
+          // Get messages for this conversation
           const { data: messages, error: messagesError } = await supabase
             .from('messages')
             .select('content, sender_id, sent_at, is_read')
@@ -54,7 +57,7 @@ const MessagesManagementPage = () => {
 
           return {
             ...conv,
-            user_name: conv.profiles?.name || 'Unknown User',
+            user_name: profile?.name || 'Unknown User',
             last_message: lastMessage,
             unread_count: unreadCount,
             total_messages: messages.length,
