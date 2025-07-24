@@ -54,7 +54,33 @@ const NewConversationDialog = ({ open, onOpenChange, onConversationCreated }: Ne
       if (!user?.id) throw new Error("User not authenticated");
       if (!message.trim()) throw new Error("Message cannot be empty");
 
-      // Create conversation
+      // Check for existing conversation to prevent duplicates
+      if (recipientType === "admin") {
+        const { data: existingConversation } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_admin_conversation', true)
+          .single();
+
+        if (existingConversation) {
+          return existingConversation.id; // Return existing conversation ID
+        }
+      } else if (recipientType === "trainer" && selectedTrainerId) {
+        const { data: existingConversation } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('trainer_id', selectedTrainerId)
+          .eq('is_admin_conversation', false)
+          .single();
+
+        if (existingConversation) {
+          return existingConversation.id; // Return existing conversation ID
+        }
+      }
+
+      // Create new conversation
       const conversationData = {
         user_id: user.id,
         is_admin_conversation: recipientType === "admin",
