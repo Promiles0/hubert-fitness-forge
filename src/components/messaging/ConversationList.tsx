@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, MessageSquare, Users, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthState } from "@/hooks/useAuthState";
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { toast } from "sonner";
 
 interface Conversation {
@@ -38,6 +39,9 @@ interface ConversationListProps {
 const ConversationList = ({ selectedConversationId, onSelectConversation, onNewConversation }: ConversationListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuthState();
+  
+  // Initialize real-time messaging
+  useRealtimeMessages();
 
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['conversations', user?.id],

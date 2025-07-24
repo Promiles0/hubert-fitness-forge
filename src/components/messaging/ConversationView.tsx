@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Send, Phone, Video, MoreVertical, Users, ArrowLeft } from "lucide-react";
+import { Send, Phone, Video, MoreVertical, Users, ArrowLeft, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthState } from "@/hooks/useAuthState";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { toast } from "sonner";
 
 interface Message {
@@ -18,6 +19,7 @@ interface Message {
   is_read: boolean;
   sent_at: string;
   sender_name?: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'seen';
 }
 
 interface ConversationViewProps {
@@ -32,6 +34,7 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthState();
   const queryClient = useQueryClient();
+  const { typingUsers, sendTypingIndicator } = useTypingIndicator(conversationId);
 
   // Fetch conversation details
   const { data: conversation } = useQuery({
@@ -108,6 +111,7 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
     },
     onSuccess: () => {
       setMessageInput("");
+      sendTypingIndicator(false);
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
@@ -116,6 +120,26 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
       console.error("Error sending message:", error);
     },
   });
+
+  // Mark messages as read when conversation is opened
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (!conversationId || !user?.id) return;
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id)
+        .eq('is_read', false);
+
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      }
+    };
+
+    markMessagesAsRead();
+  }, [conversationId, user?.id, queryClient]);
 
   // Get participant name
   useEffect(() => {
@@ -173,6 +197,27 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
       handleSendMessage();
     }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMessageInput(value);
+    
+    // Send typing indicator
+    if (value.trim() && !sendMessageMutation.isPending) {
+      sendTypingIndicator(true);
+    } else {
+      sendTypingIndicator(false);
+    }
+  };
+
+  // Stop typing indicator after 3 seconds of inactivity
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      sendTypingIndicator(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [messageInput, sendTypingIndicator]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -294,14 +339,44 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
                         <p className="text-xs opacity-75 mb-1 font-medium">{message.sender_name}</p>
                       )}
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                      <p className="text-xs opacity-75 mt-2 text-right">
-                        {formatTime(message.sent_at)}
-                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs opacity-75">
+                          {formatTime(message.sent_at)}
+                        </p>
+                        {message.sender_id === user?.id && (
+                          <div className="flex items-center gap-1">
+                            {message.is_read ? (
+                              <CheckCheck className="h-3 w-3 opacity-75" />
+                            ) : (
+                              <Check className="h-3 w-3 opacity-75" />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+            
+            {/* Typing indicator */}
+            {typingUsers.length > 0 && (
+              <div className="flex justify-start mb-3">
+                <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-bl-md max-w-[70%]">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {typingUsers[0].name} is typing...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </>
         )}
@@ -312,7 +387,7 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
         <div className="flex gap-2">
           <Input
             value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"

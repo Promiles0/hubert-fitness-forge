@@ -1,12 +1,28 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ConversationList from "@/components/messaging/ConversationList";
 import ConversationView from "@/components/messaging/ConversationView";
 import NewConversationDialog from "@/components/messaging/NewConversationDialog";
+import { useAuthState } from "@/hooks/useAuthState";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ChatPage = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [showNewConversationDialog, setShowNewConversationDialog] = useState(false);
+  const { user } = useAuthState();
+
+  // Show welcome notification on first visit
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('chat-welcome-seen');
+    if (!hasSeenWelcome && user) {
+      toast.success('Welcome to Messages!', {
+        description: 'Start a conversation or contact Admin Support for help',
+        duration: 4000,
+      });
+      localStorage.setItem('chat-welcome-seen', 'true');
+    }
+  }, [user]);
 
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
