@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthState } from "@/hooks/useAuthState";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   id: string;
@@ -315,67 +316,92 @@ const ConversationView = ({ conversationId, onBack }: ConversationViewProps) => 
           </div>
         ) : (
           <>
-            {messages.map((message, index) => {
-              const showDateSeparator = index === 0 || 
-                formatDate(messages[index - 1].sent_at) !== formatDate(message.sent_at);
-              
-              return (
-                <div key={message.id}>
-                  {showDateSeparator && (
-                    <div className="flex justify-center my-6">
-                      <span className="bg-muted text-muted-foreground text-xs px-3 py-1 rounded-full font-medium">
-                        {formatDate(message.sent_at)}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"} mb-3`}>
-                    <div className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm ${
-                      message.sender_id === user?.id
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    }`}>
-                      {!isAdminConversation && message.sender_id !== user?.id && (
-                        <p className="text-xs opacity-75 mb-1 font-medium">{message.sender_name}</p>
-                      )}
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-xs opacity-75">
-                          {formatTime(message.sent_at)}
-                        </p>
-                        {message.sender_id === user?.id && (
-                          <div className="flex items-center gap-1">
-                            {message.is_read ? (
-                              <CheckCheck className="h-3 w-3 opacity-75" />
-                            ) : (
-                              <Check className="h-3 w-3 opacity-75" />
-                            )}
-                          </div>
+            <AnimatePresence>
+              {messages.map((message, index) => {
+                const showDateSeparator = index === 0 || 
+                  formatDate(messages[index - 1].sent_at) !== formatDate(message.sent_at);
+                
+                return (
+                  <motion.div 
+                    key={message.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {showDateSeparator && (
+                      <motion.div 
+                        className="flex justify-center my-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        <span className="bg-muted text-muted-foreground text-xs px-3 py-1 rounded-full font-medium">
+                          {formatDate(message.sent_at)}
+                        </span>
+                      </motion.div>
+                    )}
+                    
+                    <div className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"} mb-3`}>
+                      <motion.div 
+                        className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm transition-all hover:shadow-md ${
+                          message.sender_id === user?.id
+                            ? "bg-primary text-primary-foreground rounded-br-md"
+                            : "bg-muted text-foreground rounded-bl-md"
+                        }`}
+                        whileHover={{ scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        {!isAdminConversation && message.sender_id !== user?.id && (
+                          <p className="text-xs opacity-75 mb-1 font-medium">{message.sender_name}</p>
                         )}
-                      </div>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs opacity-75">
+                            {formatTime(message.sent_at)}
+                          </p>
+                          {message.sender_id === user?.id && (
+                            <div className="flex items-center gap-1">
+                              {message.is_read ? (
+                                <CheckCheck className="h-3 w-3 opacity-75" />
+                              ) : (
+                                <Check className="h-3 w-3 opacity-75" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
             
             {/* Typing indicator */}
-            {typingUsers.length > 0 && (
-              <div className="flex justify-start mb-3">
-                <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-bl-md max-w-[70%]">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <AnimatePresence>
+              {typingUsers.length > 0 && (
+                <motion.div 
+                  className="flex justify-start mb-3"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-bl-md max-w-[70%]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {typingUsers[0].name} is typing...
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {typingUsers[0].name} is typing...
-                    </p>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <div ref={messagesEndRef} />
           </>
