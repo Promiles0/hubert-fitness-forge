@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthState } from './useAuthState';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { toast } from 'sonner';
 
 export const useRealtimeMessages = () => {
   const queryClient = useQueryClient();
   const { user } = useAuthState();
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -30,9 +32,11 @@ export const useRealtimeMessages = () => {
           
           // Show notification if message is not from current user
           if (payload.new.sender_id !== user.id) {
-            toast.success('New message received', {
-              description: 'You have a new message',
-              duration: 3000,
+            addNotification({
+              type: 'message',
+              title: 'New Message',
+              message: 'You have a new message',
+              link: '/dashboard/chat'
             });
           }
         }
@@ -81,9 +85,11 @@ export const useRealtimeMessages = () => {
         },
         (payload) => {
           console.log('New booking:', payload);
-          toast.success('Class booking confirmed!', {
-            description: 'Your class has been successfully booked',
-            duration: 5000,
+          addNotification({
+            type: 'booking',
+            title: 'Class Booked!',
+            message: 'Your class has been successfully booked',
+            link: '/dashboard/classes'
           });
         }
       )

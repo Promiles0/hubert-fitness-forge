@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Menu, X, User, Settings, LogOut, Shield, Dumbbell } from 'lucide-react';
+import NotificationDropdown from '@/components/NotificationDropdown';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,6 +71,8 @@ const Navbar = () => {
 
           {/* User Menu / Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated && <NotificationDropdown />}
+            <ThemeToggle />
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

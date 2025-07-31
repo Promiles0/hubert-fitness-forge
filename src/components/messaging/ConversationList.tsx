@@ -11,6 +11,7 @@ import { Search, Plus, MessageSquare, Users, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthState } from "@/hooks/useAuthState";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { toast } from "sonner";
 
 interface Conversation {
@@ -39,6 +40,7 @@ interface ConversationListProps {
 const ConversationList = ({ selectedConversationId, onSelectConversation, onNewConversation }: ConversationListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuthState();
+  const { simulateMessage } = useNotifications();
   
   // Initialize real-time messaging
   useRealtimeMessages();
@@ -137,14 +139,24 @@ const ConversationList = ({ selectedConversationId, onSelectConversation, onNewC
       <div className="flex-shrink-0 p-4 border-b border-border/20">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">Messages</h2>
-          <Button 
-            onClick={onNewConversation}
-            size="sm" 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={simulateMessage}
+              size="sm" 
+              variant="outline"
+              className="text-xs"
+            >
+              Test 📩
+            </Button>
+            <Button 
+              onClick={onNewConversation}
+              size="sm" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New
+            </Button>
+          </div>
         </div>
         
         {/* Search */}
@@ -193,6 +205,8 @@ const ConversationList = ({ selectedConversationId, onSelectConversation, onNewC
                 className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                   selectedConversationId === conversation.id
                     ? "bg-primary/10 border-l-4 border-primary shadow-sm"
+                    : conversation.unread_count > 0
+                    ? "bg-primary/5 hover:bg-primary/10 border-l-2 border-primary/30"
                     : "hover:bg-muted/50 active:bg-muted/70"
                 }`}
               >
@@ -213,7 +227,11 @@ const ConversationList = ({ selectedConversationId, onSelectConversation, onNewC
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-foreground font-medium truncate">
+                        <p className={`truncate ${
+                          conversation.unread_count > 0 
+                            ? "text-foreground font-semibold" 
+                            : "text-foreground font-medium"
+                        }`}>
                           {conversation.participant_name}
                         </p>
                         {conversation.is_admin_conversation && (
@@ -232,7 +250,11 @@ const ConversationList = ({ selectedConversationId, onSelectConversation, onNewC
                       </div>
                     </div>
                     {conversation.last_message && (
-                      <p className="text-sm text-muted-foreground truncate leading-relaxed">
+                      <p className={`text-sm truncate leading-relaxed ${
+                        conversation.unread_count > 0 
+                          ? "text-foreground font-medium" 
+                          : "text-muted-foreground"
+                      }`}>
                         {conversation.last_message.content}
                       </p>
                     )}
